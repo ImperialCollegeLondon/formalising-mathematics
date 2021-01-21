@@ -4,14 +4,6 @@ import tactic
 
 variables (Ω : Type) (X Y Z : set Ω) (a b c x y z : Ω)
 
-/-
-* `→` ("implies" -- type with `\l`)
-* `¬` ("not" -- type with `\not` or `\n`)
-* `∧` ("and" -- type with `\and` or `\an`)
-* `↔` ("iff" -- type with `\iff` or `\lr`)
-* `∨` ("or" -- type with `\or` or `\v`
--/
-
 namespace xena
 
 /-!
