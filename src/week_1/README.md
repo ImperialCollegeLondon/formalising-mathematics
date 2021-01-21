@@ -392,6 +392,13 @@ hPQ : P ↔ Q
 ⊢ P
 ```
 
+### The `by_cases` tactic
+
+If `P` is a proposition, then sometimes it's convenient to split
+into the two cases where either `P` is true, or `¬P` is true.
+The `by_cases h : P` tactic does just this; it turns one goal
+into two, one with `h : P` and the other with `h : ¬P`.
+
 ## Part B : sets
 
 ### The `use` tactic
@@ -439,30 +446,3 @@ rcases P.Hcover a with ⟨X, hX, haX⟩,
 ```
 
 .
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
