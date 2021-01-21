@@ -242,12 +242,12 @@ the exercises need it.
 
 `cases` is a very general-purpose
 tactic for deconstructing hypotheses. If `h` is a hypothesis which 
-somehow "bundles up" information, then
-`cases h with h1 h2` (or perhaps `...with h1 h2 h3 h4` depending on how much is bundled) will make hypothesis `h` vanish and will replace it with the "components" which made the proof of `h` in the first place.
+somehow "bundles up" two pieces of information, then
+`cases h with h1 h2` will make hypothesis `h` vanish and will replace it with the two "components" which made the proof of `h` in the first place.
 
 ### Examples
 
-If you have a hypothesis
+1) If you have a hypothesis
 
 ```
 hPaQ : P ∧ Q
@@ -255,7 +255,7 @@ hPaQ : P ∧ Q
 
 then
 
-`cases hPaQ with hP hQ` 
+`cases hPaQ with hP hQ,`
 
 will delete `hPaQ` and replace it with
 
@@ -263,6 +263,25 @@ will delete `hPaQ` and replace it with
 hP : P
 hQ : Q
 ```
+
+2) If you have a hypothesis
+
+```
+hPiQ : P ↔ Q
+```
+
+then
+
+`cases hPiQ with hPQ hQP,`
+
+will delete `hPiQ and replace it with the two hypotheses
+```
+hPQ : P → Q
+hQP : Q → P
+```
+
+Note however that hypotheses of the form `h : P ↔ Q` are rather useful, because you can use `rw h` tactic with them. So think twice about destroying them.
+
 
 ## The `split` tactic
 
@@ -306,6 +325,8 @@ split,
 working on Q,
 ...
 ```
+
+Similarly if your goal is `⊢ P ↔ Q` then `split,` will turn it into two goals `⊢ P → Q` and `⊢ Q → P`.
 
 ## The `left` and `right` tactics
 
@@ -386,3 +407,62 @@ When faced with a goal like
 ```
 ⊢ x ∈ X
 ```
+
+## Part D : relations
+
+### The `obtain` and `rcases` tactics
+
+Sometimes we want to package more than two pieces of information together. For example if `α` is a type, and `P : partition α` is a partition of `α` then `P.Hcover` is the theorem
+
+```
+∀ a : α, ∃ X ∈ P.C, a ∈ X
+```
+
+and so if `a : α` then `P.Hcover a` is the following package:
+
+(i) A term `X : set α`
+(ii) A proof `hX : X ∈ P.C`
+(iii) A proof `haX : a ∈ X`
+
+If you do `cases P.Hcover a with X h` then you'll extract `X` but `h` is still (ii) and (iii) packaged together, and you'll have to continue with `cases h with hX haX`. 
+
+An easier way to get all three parts of the package out at once is
+
+```
+obtain ⟨X, hX, haX⟩ := P.Hcover a,
+```
+
+and another way is
+
+```
+rcases P.Hcover a with ⟨X, hX, haX⟩,
+```
+
+.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
