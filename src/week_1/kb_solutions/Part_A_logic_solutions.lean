@@ -64,8 +64,10 @@ the `assumption` tactic.
 /-- Every proposition implies itself. -/
 theorem id : P → P :=
 begin
-  -- Prove this using `intro` and `exact`
-  sorry
+  -- let hP be a proof of P
+  intro hP,
+  -- then hP is a proof of P!
+  exact hP
 end
 
 /-
@@ -86,33 +88,75 @@ end
 
 theorem imp_intro : P → Q → P :=
 begin
-  -- remember that by definition the goal is P → (Q → P).
-  -- Prove this proposition using `intro` and `exact`.
-  -- Experiment. Can you prove it using `intros` and `assumption`?
-  sorry
+  -- remember that by definition the goal is P → (Q → P),
+  -- so it's P implies something, so let's assume 
+  -- that P is true and call this hypothesis hP.
+  intro hP,
+  -- Now we have to prove that Q implies P, so let's
+  -- assume that Q is true, and let's call this hypothesis hQ
+  intro hQ,
+  -- We now have to prove that P is true.
+  -- But this is exactly our hypothesis hP.
+  exact hP,
 end
 
 /-- If we know `P`, and we also know `P → Q`, we can deduce `Q`. -/
 lemma modus_ponens : P → (P → Q) → Q :=
 begin
-  -- You might find the `apply` tactic useful here.
-  sorry
+  -- remember this means "P implies that ((P implies Q) implies Q)"
+  -- so let's assume P is true
+  intro hP,
+  -- and let's assume hypothesis hPQ, that P implies Q
+  intro hPQ,
+  -- now `hPQ` says `P → Q` and we're trying to prove `Q`!
+  -- So by applying the hypothesis `hPQ`, we can reduce
+  -- this puzzle to proving `P`.
+  apply hPQ,
+  -- Now we have to prove `P`. But this is just an assumption
+  exact hP, -- or `assumption`
 end
 
 /-- implication is transitive -/
 lemma imp_trans : (P → Q) → (Q → R) → (P → R) :=
 begin
-  -- The tactics you know should be enough
-  sorry
+  -- intros will let you intro many things at once
+  intros hPQ hQR hP,
+  -- The goal is now `⊢ R`, and `hQR : Q → R` so `apply hQR` reduces the goal to `Q`
+  apply hQR,
+  -- similarly `apply hPQ` reduces the goal to `P`.
+  apply hPQ,
+  -- We are kind of proving this result backwards! We already have
+  -- a proof of P. 
+  exact hP
 end
 
 -- This one is a "relative modus ponens" -- in the
 -- presence of P, if Q -> R and Q then R.
 lemma forall_imp : (P → Q → R) → (P → Q) → (P → R) :=
 begin
-  -- `intros hPQR hPQ hP,` would be a fast way to start.
-  -- Make sure you understand what is going on there, if you use it.
-  sorry
+  -- Let `hPQR` be the hypothesis that `P → Q → R`. 
+  intro hPQR,
+  -- We now need to prove that `(P → Q)` implies something.
+  -- So let `hPQ` be hypothesis that `P → Q`
+  intro hPQ,
+  -- We now need to prove that `P` implies something, so 
+  -- let `hP` be the hypothesis that `P` is true.
+  intro hP,
+  -- We now have to prove `R`.
+  -- We know the hypothesis `hPQR : P → (Q → R)`.
+  -- If you think about this, it's the same as `(P ∧ Q) → R`
+  -- So perhaps it's not surprising that after
+  apply hPQR,
+    -- we now have two goals!
+    -- The first goal is just to prove P, and this is an assumption
+    exact hP,
+  -- The number of goals is just one again.
+  -- the remaining goal is to prove `Q`. 
+  -- But recall that `hPQ` is the hypothesis that `P` implies `Q`
+  -- so by applying it,
+  apply hPQ,
+  -- we change our goal to proving `P`. And this is a hypothesis
+  exact hP,
 end
 
 /-
@@ -128,7 +172,7 @@ We develop a basic interface for `¬`.
 
 
 -- I'll prove this one for you
-theorem not_iff_imp_false : ¬ P ↔ (P → false) :=
+theorem not_def : ¬ P ↔ (P → false) :=
 begin
   -- true by definition
   refl
@@ -137,10 +181,11 @@ end
 theorem not_not_intro : P → ¬ (¬ P) :=
 begin
   intro hP,
-  rw not_iff_imp_false,
-  -- You can use `rw not_iff_imp_false` to change `¬ X` into `X → false`. 
-  -- But you don't actually have to, because they are the same *by definition*
-  sorry,
+  -- You can use `rw not_def` to change `¬ X` into `X → false`. 
+  rw not_def, rw not_def, -- but it's not necessary really,
+  intro hnP,
+  apply hnP,
+  exact hP,
 end
 
 -- Here is a funny alternative proof! Can you work out how it works?
@@ -160,7 +205,8 @@ example : P → ¬ (¬ P) :=
 -- "proof by contradiction".
 theorem modus_tollens : (P → Q) → (¬ Q → ¬ P) :=
 begin
-  sorry,
+  -- this is (P → Q) → (Q → false) → (P → false) so we can just...
+  apply imp_trans,
 end
 
 -- This one cannot be proved using constructive mathematics!
@@ -169,7 +215,11 @@ end
 -- Try it without using these, and you'll get stuck!
 theorem double_negation_elimination : ¬ (¬ P) → P :=
 begin
-  sorry,
+  intro hnnP,
+  by_contra h,
+  -- hnnP is ¬ P → false, and the goal is ⊢ false, so we can do this
+  apply hnnP,
+  exact h,
 end
 
 /-!
@@ -211,14 +261,16 @@ end
 
 theorem and.elim_left : P ∧ Q → P :=
 begin
-  -- I would recommend starting with
-  -- `intro hPaQ,` and then `cases hPaQ with hP hQ`.
-  sorry
+  intro hPaQ,
+  cases hPaQ with hP hQ,
+  exact hP,
 end
 
 theorem and.elim_right : P ∧ Q → Q :=
 begin
-  sorry
+  intro hPaQ,
+  -- here's a shortcut
+  exact hPaQ.2, -- if `h : P ∧ Q` then `h.1 : P` and `h.2 : Q`
 end
 
 -- fancy term mode proof
@@ -226,26 +278,34 @@ example : P ∧ Q → Q := λ hPaQ, hPaQ.2
 
 theorem and.intro : P → Q → P ∧ Q :=
 begin
-  -- remember the `split` tactic.
-  sorry
+  intros hP hQ,
+  split,
+  { assumption },
+  { assumption }
 end
 
 /-- the eliminator for `∧` -/ 
 theorem and.elim : P ∧ Q → (P → Q → R) → R :=
 begin
-  sorry,
+  -- `rintro` does `intro` and `cases` in one go
+  rintro ⟨hP, hQ⟩ hPQR,
+  -- hPQR is a function, so we can give it some inputs
+  exact hPQR hP hQ,
 end
 
 /-- The recursor for `∧` -/
 theorem and.rec : (P → Q → R) → P ∧ Q → R :=
 begin
-  sorry
+  rintro hPQR ⟨hP, hQ⟩,
+  exact hPQR hP hQ,
 end
 
 /-- `∧` is symmetric -/
 theorem and.symm : P ∧ Q → Q ∧ P :=
 begin
-  sorry
+  -- see how quickly we can do this using ⟨_, _⟩
+  rintro ⟨hP, hQ⟩,
+  exact ⟨hQ, hP⟩
 end
 
 -- term mode proof
@@ -255,11 +315,8 @@ example : P ∧ Q → Q ∧ P :=
 /-- `∧` is transitive -/
 theorem and.trans : (P ∧ Q) → (Q ∧ R) → (P ∧ R) :=
 begin
-  -- The `rintro` tactic will do `intro` and `cases` all in one go.
-  -- If you like, try starting this proof with `rintro ⟨hP, hQ⟩` if you want
-  -- to experiment with it. Get the pointy brackets with `\<` and `\>`,
-  -- or both at once with `\<>`.
-  sorry,
+  rintro ⟨hP, hQ⟩ ⟨hQ', hR⟩,
+  exact ⟨hP, hR⟩,
 end
 
 /-
@@ -276,7 +333,8 @@ Let's go the other way.
 
 lemma imp_imp_of_and_imp : ((P ∧ Q) → R) → (P → Q → R) :=
 begin
-  sorry,
+  intros h hP hQ,
+  exact h ⟨hP, hQ⟩
 end
 
 
@@ -295,8 +353,10 @@ a hypothesis `h : P ↔ Q`, and `split` if you have a goal `⊢ P ↔ Q`.
 /-- `P ↔ P` is true for all propositions `P`, i.e. `↔` is reflexive. -/
 theorem iff.refl : P ↔ P :=
 begin
-  -- start with `split`
-  sorry,
+  split,
+  -- recall that we already proved `id : P → P`
+  { apply id },
+  { apply id }
 end
 
 -- If you get stuck, there is always the "truth table" tactic `tauto!`
@@ -314,10 +374,16 @@ end
 /-- `↔` is symmetric -/
 theorem iff.symm : (P ↔ Q) → (Q ↔ P) :=
 begin
-  sorry
+  intro h,
+  /-
+  h: P ↔ Q
+  ⊢ Q ↔ P
+  -/
+  rw h,
+  -- This changes the goal to `Q ↔ Q`, which is automatically closed by `refl`
+  -- because `rw` tries a cheeky `refl` after every invocation, just to see
+  -- if it closes the goal
 end
-
--- NB there is quite a devious proof of this using `rw`.
 
 -- show-off term mode proof
 example : (P ↔ Q) → (Q ↔ P) :=
@@ -326,14 +392,20 @@ example : (P ↔ Q) → (Q ↔ P) :=
 /-- `↔` is commutative -/
 theorem iff.comm : (P ↔ Q) ↔ (Q ↔ P) :=
 begin
-  sorry
+  split,
+  { apply iff.symm },
+  { apply iff.symm }
 end
 
 -- without rw or cc this is painful!
 /-- `↔` is transitive -/
 theorem iff.trans :  (P ↔ Q) → (Q ↔ R) → (P ↔ R) :=
 begin
-  sorry,
+  intros hPQ hQR,
+  -- ⊢ P ↔ R
+  rw hPQ,
+  -- ⊢ Q ↔ R
+  exact hQR,
 end
 
 -- This can be done constructively, but it's hard. You'll need to know
@@ -341,7 +413,13 @@ end
 -- tactic `tauto!` will do it.
 theorem iff.boss : ¬ (P ↔ ¬ P) :=
 begin
-  sorry
+  rintro ⟨h1, h2⟩,
+  have hnP : ¬ P,
+  { intro hP,
+    exact h1 hP hP,
+  },
+  have hP : P := h2 hnP,
+  exact hnP hP,
 end
 
 -- Now we have iff we can go back to and.
@@ -353,7 +431,8 @@ end
 /-- `∧` is commutative -/
 theorem and.comm : P ∧ Q ↔ Q ∧ P :=
 begin
-  sorry,
+  split; -- semicolon means "apply next tactic to all goals generated by this one"
+  apply and.symm,
 end
 
 -- fancy term-mode proof
@@ -366,7 +445,11 @@ example : P ∧ Q ↔ Q ∧ P :=
 /-- `∧` is associative -/
 theorem and_assoc : ((P ∧ Q) ∧ R) ↔ (P ∧ Q ∧ R) :=
 begin
-  sorry,
+  split,
+  { rintro ⟨⟨hP, hQ⟩, hR⟩,
+    exact ⟨hP, hQ, hR⟩ },
+  { rintro ⟨hP, hQ, hR⟩,
+    exact ⟨⟨hP, hQ⟩, hR⟩ },
 end
 
 
@@ -392,39 +475,60 @@ and if you want to prove `Q` then use the `right` tactic.
 -- recall that P, Q, R are Propositions. We'll need S for this one.
 variable (S : Prop)
 
--- You will need to use the `left` tactic for this one.
+-- You will need to use the `left `tactic for this one.
 theorem or.intro_left : P → P ∨ Q :=
 begin
-  sorry
+  intro P, 
+  left,
+  -- `assumption` means `exact <choose the correct hypothesis>`
+  assumption,
 end
 
 theorem or.intro_right : Q → P ∨ Q :=
 begin
-  sorry,
+  intro Q,
+  right,
+  assumption,
 end
 
 /-- the eliminator for `∨`. -/
 theorem or.elim : P ∨ Q → (P → R) → (Q → R) → R :=
 begin
-  sorry
+  intros hPoQ hPR hQR,
+  cases hPoQ with hP hQ,
+  { exact hPR hP },
+  { exact hQR hQ }
 end
 
 /-- `∨` is symmetric -/
 theorem or.symm : P ∨ Q → Q ∨ P :=
 begin
-  sorry
+  intro hPoQ,
+  cases hPoQ with hP hQ,
+  { right, assumption },
+  { left, assumption }
 end
 
 /-- `∨` is commutative -/
 theorem or.comm : P ∨ Q ↔ Q ∨ P :=
 begin
-  sorry,
+  split; -- note semicolon
+  apply or.symm,
 end
 
 /-- `∨` is associative -/
 theorem or.assoc : (P ∨ Q) ∨ R ↔ P ∨ Q ∨ R :=
 begin
-  sorry,
+  split,
+  { -- rintro can do intro+cases in one go
+    rintro ((hP | hQ) | hR),
+    { left, assumption },
+    { right, left, assumption },
+    { right, right, assumption } },
+  { rintro (hP | hQ | hR),
+    { left, left, assumption },
+    { left, right, assumption },
+    { right, assumption } }
 end
 
 /-!
@@ -433,34 +537,42 @@ end
 
 theorem or.imp : (P → R) → (Q → S) → P ∨ Q → R ∨ S :=
 begin
-  sorry,
+  rintro hPR hQS (hP | hQ),
+  { left, exact hPR hP },
+  { right, exact hQS hQ }
 end
 
 theorem or.imp_left : (P → Q) → P ∨ R → Q ∨ R :=
 begin
-  sorry,
+  rintro hPQ (hP | hR),
+  { left, exact hPQ hP },
+  { right, assumption },
 end
 
 theorem or.imp_right : (P → Q) → R ∨ P → R ∨ Q :=
 begin
-  sorry,
+  -- reduce to previous lemma
+  rw or.comm R,
+  rw or.comm R,
+  apply or.imp_left,
 end
 
 theorem or.left_comm : P ∨ Q ∨ R ↔ Q ∨ P ∨ R :=
 begin
-  -- Try rewriting `or.comm` and `or.assoc` to do this one quickly.
-  sorry,
+  rw [or.comm P, or.assoc, or.comm R],
 end
 
 /-- the recursor for `∨` -/
 theorem or.rec : (P → R) → (Q → R) → P ∨ Q → R :=
 begin
-  sorry,
+  intros hPR hQR hPoQ,
+  exact or.elim _ _ _ hPoQ hPR hQR,
 end
 
 theorem or_congr : (P ↔ R) → (Q ↔ S) → (P ∨ Q ↔ R ∨ S) :=
 begin
-  sorry,
+  rintro hPR hQS,
+  rw [hPR, hQS],
 end
 
 /-!
@@ -486,29 +598,51 @@ Hint: how many cases are there?
 /-- eliminator for `false` -/
 theorem false.elim : false → P :=
 begin
-  sorry,
+  intro h,
+  cases h,
 end
 
 theorem and_true_iff : P ∧ true ↔ P :=
 begin
-  sorry,
+  split,
+  { rintro ⟨hP, -⟩,
+    exact hP },
+  { intro hP,
+    split,
+    { exact hP },
+    { trivial } }
 end
 
 theorem or_false_iff : P ∨ false ↔ P :=
 begin
-  sorry,
+  split,
+  { rintro (hP | h),
+    { assumption },
+    { cases h} },
+  { intro hP,
+    left,
+    exact hP }
 end
 
 -- false.elim is handy for this one
 theorem or.resolve_left : P ∨ Q → ¬P → Q :=
 begin
-  sorry,
+  rintro (hP | hQ) hnP,
+  { apply false.elim,
+    exact hnP hP },
+  { exact hQ },
 end
 
 -- this one you can't do constructively
 theorem or_iff_not_imp_left : P ∨ Q ↔ ¬P → Q :=
 begin
-  sorry,
+  split,
+  { apply or.resolve_left },
+  { intro hnPQ,
+    -- TODO : document this tactic
+    by_cases h : P,
+    { left, assumption },
+    { right, exact hnPQ h} }
 end
 
 end xena
