@@ -165,8 +165,9 @@ begin
 end
 
 -- This one cannot be proved using constructive mathematics!
--- You _have_ to use the `tauto!` tactic, or some other classical 
--- tactic. Try it using the tactics you already know! 
+-- You _have_ to use a tactic like `by_contra` (or, if you're happy
+-- to cheat, the full "truth table" tactic `tauto!`.
+-- Try it without using these, and you'll get stuck!
 theorem double_negation_elimination : ¬ (¬ P) → P :=
 begin
   sorry,
@@ -213,8 +214,6 @@ theorem and.elim_left : P ∧ Q → P :=
 begin
   -- I would recommend starting with
   -- `intro hPaQ,` and then `cases hPaQ with hP hQ`.
-  intro hPaQ,
-  cases hPaQ with hP hQ,
   sorry
 end
 

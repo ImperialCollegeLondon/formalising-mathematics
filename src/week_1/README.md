@@ -220,6 +220,24 @@ what the `apply` tactic is for.
 
 The `rw` tactic tries `refl` 
 
+## The `by_contra` tactic
+
+If your goal is
+
+```
+⊢ P
+```
+
+then `by_contra h,` will change your tactic state to
+
+```
+h : ¬P
+⊢ false
+```
+
+It is a "proof by contradiction" tactic. Constructive mathematicians reject this tactic. We will not be talking about constructive mathematics in this course. One or two of
+the exercises need it.
+
 ## The `cases` tactic
 
 `cases` is a very general-purpose
