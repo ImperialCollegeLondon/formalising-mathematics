@@ -64,7 +64,6 @@ the `assumption` tactic.
 /-- Every proposition implies itself. -/
 theorem id : P → P :=
 begin
-  intro hP,
   -- Prove this using `intro` and `exact`
   sorry
 end
