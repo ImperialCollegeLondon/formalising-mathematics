@@ -154,7 +154,7 @@ However, `h` **must**  be either an equality or a bi-implication (an "iff"). You
 
 ### Examples
 
-1) If your local context is 
+1) If your tactic state is 
 
 ```
 h : a = b
@@ -195,7 +195,7 @@ your goal to
 ⊢ (P → false) → Q
 ```
 
-4) If your local context is
+4) If your tactic state is
 ```
 h : P ↔ Q 
 ⊢ ¬Q
@@ -331,3 +331,58 @@ Note that these tactics are "dangerous" in the
 sense that they can change a true goal into
 a false one, and hence can stop you solving
 a level. Use them wisely!
+
+### The `have` tactic
+
+The `have` tactic needs to be used far less
+than a mathematician thinks. It is a tactic
+which can be used to add a new hypothesis
+to the tactic state. Of course, you will
+have to prove it! Say your tactic state is
+
+```
+hQ : Q
+⊢ P
+```
+
+and you decide that it would be helpful
+to have a hypothesis `h : P ↔ Q` in your
+list of hypotheses. You know how to prove it
+from the hypotheses you have, 
+but it's not there, and it's not your goal
+so you can't work on it. If you type
+
+`have h : P ↔ Q` 
+
+then you will have _two_ goals. The first
+will have all your old hypotheses, but a new
+goal of `P ↔ Q`.
+
+```
+hQ : Q
+⊢ P ↔ Q
+```
+
+The second will have all your old hypotheses, and the new one `h : P ↔ Q`, and you'll be back to your old goal:
+
+```
+hQ : Q
+hPQ : P ↔ Q
+⊢ P
+```
+
+## Part B : sets
+
+### The `use` tactic
+
+When faced with a goal like
+
+```
+⊢ ∃ a, a ∈ X
+```
+
+, if you have a term `x` which you want to use for `a`, you can make progress with `use x,`. The goal will become
+
+```
+⊢ x ∈ X
+```
