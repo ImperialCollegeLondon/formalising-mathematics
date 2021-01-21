@@ -30,7 +30,7 @@ Well, you can always play along using the community web editor. Here are the fou
 
 [logic](https://leanprover-community.github.io/lean-web-editor/#url=https%3A%2F%2Fraw.githubusercontent.com%2FImperialCollegeLondon%2Fformalising-mathematics%2Fmaster%2Fsrc%2Fweek_1%2FPart_A_logic.lean)
 
-[sets](https://raw.githubusercontent.com/ImperialCollegeLondon/formalising-mathematics/master/src/week_1/Part_B_sets.lean)
+[sets](https://leanprover-community.github.io/lean-web-editor/#url=https%3A%2F%2Fraw.githubusercontent.com%2FImperialCollegeLondon%2Fformalising-mathematics%2Fmaster%2Fsrc%2Fweek_1%2FPart_B_sets.lean)
 
 [functions](https://leanprover-community.github.io/lean-web-editor/#url=https%3A%2F%2Fraw.githubusercontent.com%2FImperialCollegeLondon%2Fformalising-mathematics%2Fmaster%2Fsrc%2Fweek_1%2FPart_C_functions.lean)
 
