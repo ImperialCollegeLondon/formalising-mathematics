@@ -26,7 +26,7 @@ and then open up some of the files in `src/week1` and you're up and running. Loo
 
 # I failed to install Lean
 
-Well, you can always play along using the community web editor. Here are the four worlds for week 1. You might have to wait for a minute or so until "Lean is busy" becomes "Lean is ready".
+Well, you can always play along using the community web editor. Here are the four worlds for week 1. You might have to wait for a minute or so until "Lean is busy..." becomes "Lean is ready!".
 
 [logic](https://leanprover-community.github.io/lean-web-editor/#url=https%3A%2F%2Fraw.githubusercontent.com%2FImperialCollegeLondon%2Fformalising-mathematics%2Fmaster%2Fsrc%2Fweek_1%2FPart_A_logic.lean)
 
