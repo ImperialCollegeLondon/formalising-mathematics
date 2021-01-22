@@ -22,7 +22,7 @@ leanproject get ImperialCollegeLondon/formalising-mathematics
 code formalising-mathematics
 ```
 
-and then open up some of the files in `src/week1` and you're up and running. Look at the `README.md` file in `src/week1` for more instructions.
+and then open up some of the files in `src/week1` and you're up and running. Look at the `README.md` file in `src/week1` for more instructions. Fill in the `sorry`s. Try a couple of levels of the [natural number game](http://wwwf.imperial.ac.uk/~buzzard/xena/natural_number_game/) if you're not sure what's going on.
 
 # I failed to install Lean
 
