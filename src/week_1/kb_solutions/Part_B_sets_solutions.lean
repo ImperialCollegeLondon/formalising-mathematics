@@ -24,6 +24,7 @@ end
 lemma subset_refl : X ⊆ X :=
 begin
   rw subset_def,
+  -- goal now "for all a, ..." and `intro` makes progress with this.
   intros a ha,
   exact ha,
 end
