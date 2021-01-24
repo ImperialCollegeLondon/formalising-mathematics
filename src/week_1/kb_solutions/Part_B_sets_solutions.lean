@@ -233,7 +233,10 @@ begin
   { -- you need classical logic to do this part
     -- `contrapose!` is a way of making progress
     -- `finish` does it completely.
-    -- We use `by_contra`.
+    -- We use `by_contra`, which
+    -- turns a goal `⊢ P` into 
+    -- a hypothesis `h : ¬ P` and
+    -- a goal of `false`
     intro h,
     by_contra hnX,
     apply h,
