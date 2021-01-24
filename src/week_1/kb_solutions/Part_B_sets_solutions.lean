@@ -23,20 +23,21 @@ end
 
 lemma subset_refl : X ⊆ X :=
 begin
-  sorry,
+  rw subset_def,
+  intros a ha,
+  exact ha,
 end
 
 lemma subset_trans (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) : X ⊆ Z :=
 begin
-  -- If you start with `rw subset_def at *` then you
-  -- will have things like `hYZ : ∀ (a : Ω), a ∈ Y → a ∈ Z`
-  -- You need to think of `hYZ` as a function, which has two
-  -- inputs: first a term `a` of type `Ω`, and second a proof `haY` that `a ∈ Y`.
-  -- It then produces one output `haZ`, a proof that `a ∈ Z`.
-  -- You can also think of it as an implication:
-  -- "if a is in Ω, and if a ∈ Y, then a ∈ Z". Because it's an implication,
-  -- you can `apply hYZ`. This is a really useful skill!
-  sorry
+  rw subset_def at *,
+  intros a ha,
+  -- ⊢ a ∈ Z
+  -- hYZ says: a ∈ Y → a ∈ Z. So... 
+  apply hYZ,
+  -- ⊢ a ∈ Y
+  apply hXY,
+  exact ha,
 end
 
 /-!
@@ -59,8 +60,10 @@ end
 
 lemma subset.antisymm (hXY : X ⊆ Y) (hYX : Y ⊆ X) : X = Y :=
 begin
-  -- start with `ext a`,
-  sorry
+  ext a,
+  split,
+  { apply hXY },
+  { apply hYX }
 end
 
 /-!
@@ -71,13 +74,13 @@ Type `\cup` or `\un` for `∪`, and `\cap` or `\i` for `∩`
 
 -/
 
-lemma union_def : a ∈ X ∪ Y ↔ a ∈ X ∨ a ∈ Y :=
+lemma mem_union_iff : a ∈ X ∪ Y ↔ a ∈ X ∨ a ∈ Y :=
 begin
   -- true by definition
   refl,
 end
 
-lemma inter_def : a ∈ X ∩ Y ↔ a ∈ X ∧ a ∈ Y :=
+lemma mem_inter_iff : a ∈ X ∩ Y ↔ a ∈ X ∧ a ∈ Y :=
 begin
   -- true by definition
   refl,
@@ -88,37 +91,79 @@ end
 -- assuming they're true by definition.
 
 -- union lemmas
+-- if you want to use `mem_union_iff` you should start with `ext`
 
 lemma union_self : X ∪ X = X :=
 begin
-  sorry
+  ext a,
+  rw mem_union_iff,
+  split,
+  { intro h,
+    cases h with ha ha;
+    exact ha },
+  { intro ha,
+    left,
+    exact ha }
 end
 
 lemma subset_union_left : X ⊆ X ∪ Y :=
 begin
-  sorry
+  rw subset_def,
+  intros a haX,
+  rw mem_union_iff,
+  left,
+  assumption,
 end
 
 lemma subset_union_right : Y ⊆ X ∪ Y :=
 begin
-  sorry
+  -- don't need to rewrite subset_def or mem_union_iff
+  -- as they're both true by definition
+  intros a haY,
+  right,
+  assumption,
 end
 
 lemma union_subset_iff : X ∪ Y ⊆ Z ↔ X ⊆ Z ∧ Y ⊆ Z :=
 begin
-  sorry
+  -- NB Lean's simplifier `simp` solves this (and many others)
+  -- as do the tactics `finish` and `tidy`
+  -- We will talk a bit more about `simp` in week 2.
+  split,
+  { intro h,
+    split,
+    { intros a haX,
+      apply h,
+      left,
+      assumption },
+    { intros a haY,
+      apply h,
+      right,
+      assumption },
+  },
+  { rintros ⟨hXZ, hYZ⟩ a (haX | haY),
+    { exact hXZ haX },
+    { exact hYZ haY } }
 end
 
 variable (W : set Ω)
 
 lemma union_subset_union (hWX : W ⊆ X) (hYZ : Y ⊆ Z) : W ∪ Y ⊆ X ∪ Z :=
 begin
-  sorry
+  rintros a (haW | haY),
+  { left,
+    exact hWX haW },
+  { right,
+    exact hYZ haY }
 end
 
 lemma union_subset_union_left (hXY : X ⊆ Y) : X ∪ Z ⊆ Y ∪ Z :=
 begin
-  sorry
+  rintros a (haX | haZ),
+  { left, 
+    exact hXY haX },
+  { right,
+    assumption }
 end
 
 -- etc etc
@@ -127,24 +172,40 @@ end
 
 lemma inter_subset_left : X ∩ Y ⊆ X :=
 begin
-  sorry
+  rintro a ⟨haX, haY⟩,
+  assumption,
 end
 
 -- don't forget `ext` to make progress with equalities of sets
 
 lemma inter_self : X ∩ X = X :=
 begin
-  sorry
+  ext a,
+  split,
+  { rintro ⟨ha, -⟩,
+    assumption },
+  { intro ha,
+    exact ⟨ha, ha⟩ }
 end
 
 lemma inter_comm : X ∩ Y = Y ∩ X :=
 begin
-  sorry
+  ext a,
+  split;
+  { rintro ⟨h1, h2⟩,
+    exact ⟨h2, h1⟩ }
 end
 
 lemma inter_assoc : X ∩ (Y ∩ Z) = (X ∩ Y) ∩ Z :=
 begin
-  sorry
+--  finish,
+  -- tidy works too,
+  ext a,
+  split,
+  { rintro ⟨hx, hy, hz⟩, -- try `rintro?` to see the syntax
+    exact ⟨⟨hx, hy⟩, hz⟩ },
+  { rintro ⟨⟨hx, hy⟩, hz⟩,
+    exact ⟨hx, hy, hz⟩ },
 end
 
 /-!
@@ -155,12 +216,36 @@ end
 
 lemma not_exists_iff_forall_not : ¬ (∃ a, a ∈ X) ↔ ∀ b, ¬ (b ∈ X) :=
 begin
-  sorry,
+  split,
+  { intros h b hb,
+    apply h,
+    use b,
+    assumption },
+  { rintro h ⟨a, ha⟩,
+    exact h a ha },
 end
+
+
 
 example : ¬ (∀ a, a ∈ X) ↔ ∃ b, ¬ (b ∈ X) :=
 begin
-  sorry,
+  split,
+  { -- you need classical logic to do this part
+    -- `contrapose!` is a way of making progress
+    -- `finish` does it completely.
+    -- We use `by_contra`.
+    intro h,
+    by_contra hnX,
+    apply h,
+    intro a,
+    by_contra hXa,
+    apply hnX,
+    use a, }, 
+  { intro h,
+    cases h with b hb,
+    intro h,
+    apply hb,
+    apply h }
 end
 
 end xena
