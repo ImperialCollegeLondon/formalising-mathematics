@@ -223,6 +223,22 @@ begin
   sorry
 end
 
+/-
+
+The reason I choose these five lemmas in particular, is that
+term rewriting systems are very well understood by computer
+scientists, and in particular there is something called the
+Knuth-Bendix algorithm, which, given the axioms for a group
+as input, produces a confluent and noetherian term rewrite
+system that transforms every term into a unique normal form.
+The system it produces is precisely the `simp` lemmas which
+we haven proven above! See
+
+https://en.wikipedia.org/wiki/Word_problem_(mathematics)#Example:_A_term_rewriting_system_to_decide_the_word_problem_in_the_free_group
+
+for more information.
+-/
+
 -- Now let's try our example...
 example : (a * b) * 1⁻¹⁻¹ * b⁻¹ * (a⁻¹ * a⁻¹⁻¹⁻¹) * a = 1 := by simp -- short for begin simp end
 
