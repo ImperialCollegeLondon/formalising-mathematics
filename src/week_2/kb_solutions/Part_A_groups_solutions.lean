@@ -4,15 +4,16 @@ import tactic
 
 # Groups
 
-Definition and basic properties of a group
+Definition and basic properties of a group.
+We call them `group2` because Lean has groups already.
 
 -/
-
-namespace xena
 
 /-
 
 ## Definition of a group
+
+The `group2` class will extend `has_mul`, `has_one` and `has_inv`. 
 
 `has_mul G` means that `G` has a multiplication `* : G → G → G`
 `has_one G` means that `G` has a `1 : G`
@@ -21,24 +22,26 @@ namespace xena
 All of `*`, `1` and `⁻¹` are notation, and no axioms are assumed
 for any of them.
 
-A group has all of this notation, and the group axioms too. 
-Let's now define the group class.
+A `group2` has all of this notation, and the group axioms too. 
+Let's now define the group2 class.
 -/
 
-class group (G : Type) extends has_mul G, has_one G, has_inv G :=
+/-- A `group2` structure on a type `G` is multiplication, identity and inverse,
+plus the usual axioms -/
+class group2 (G : Type) extends has_mul G, has_one G, has_inv G :=
 (mul_assoc : ∀ (a b c : G), a * b * c = a * (b * c))
 (one_mul : ∀ (a : G), 1 * a = a)
 (mul_left_inv : ∀ (a : G), a⁻¹ * a = 1)
 
 /-
 
-Formally, a term of type `group G` is now a multiplication, 1, and inverse
+Formally, a term of type `group2 G` is now a multiplication, 1, and inverse
 function, together with the notation, and satisfying the axioms.
 
-The way to say "let G be a group" is now `(G : Type) [group G]`
+The way to say "let G be a group" is now `(G : Type) [group2 G]`
 
 The square bracket notation is the notation used for classes.
-Formally, it means "put a term of type `group G` into the type class
+Formally, it means "put a term of type `group2 G` into the type class
 inference system"
 
 -/
@@ -61,13 +64,13 @@ Here are the four lemmas we will prove.
 `mul_one (a : G) : a * 1 = a`
 `mul_right_inv (a : G) : a * a⁻¹ = 1`
 -/
-namespace group
+namespace group2
 
 -- let `G` be a group.
-variables {G : Type} [group G]
+variables {G : Type} [group2 G]
 
 /-
-We start by proving `mul_left_cancel : ∀ a b c, a * b = a * c → b = c.
+We start by proving `mul_left_cancel : ∀ a b c, a * b = a * c → b = c`.
 We assume `Habac : a * b = a * c` and deduce `b = c`. I've written
 down the maths proof. Your job is to supply the rewrites that are
 necessary to justify each step. Each rewrite is either one of
@@ -77,6 +80,8 @@ the axioms of a group, or an assumption. A reminder of the axioms:
 `one_mul : ∀ (a : G), 1 * a = a`
 `mul_left_inv : ∀ (a : G), a⁻¹ * a = 1`
 
+This proof could be done using rewrites, but I will take this opportunity
+to introduce the `calc` tactic.
 -/
 lemma mul_left_cancel (a b c : G) (Habac : a * b = a * c) : b = c := 
 begin
@@ -92,9 +97,9 @@ end
 /-
 Next we prove that if `x = a⁻¹ * y` then `a * x = y`. Remember we are still
 missing `mul_one` and `mul_right_inv`. A proof that avoids them is
-the following: we want `a * x = y`. Applying the previous lemma with a = a⁻¹,
-it suffices to prove that `a⁻¹ * (a * x) = a⁻¹ * y.`
-Now rewrite! Use associativity and left cancellation on on the left, to reduce
+the following: we want `a * x = y`. ANow `apply`ing the previous lemma, it
+suffices to prove that `a⁻¹ * (a * x) = a⁻¹ * y.`
+Now use associativity and left cancellation on on the left, to reduce
 to `h`. 
 
 Note that `mul_left_cancel` is a function, and its first input is 
@@ -366,6 +371,4 @@ begin
     rw inv_inv }
 end  
 
-end group
-
-end xena
+end group2
