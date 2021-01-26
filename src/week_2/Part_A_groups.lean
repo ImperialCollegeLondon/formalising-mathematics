@@ -13,6 +13,8 @@ We call them `group2` because Lean has groups already.
 
 ## Definition of a group
 
+The `group2` class will extend `has_mul`, `has_one` and `has_inv`. 
+
 `has_mul G` means that `G` has a multiplication `* : G → G → G`
 `has_one G` means that `G` has a `1 : G`
 `has_inv G` means that `G` has an `⁻¹ : G → G`
@@ -24,7 +26,7 @@ A `group2` has all of this notation, and the group axioms too.
 Let's now define the group2 class.
 -/
 
-/-- A group2 structure on a type `G` is multiplication, identity and inverse,
+/-- A `group2` structure on a type `G` is multiplication, identity and inverse,
 plus the usual axioms -/
 class group2 (G : Type) extends has_mul G, has_one G, has_inv G :=
 (mul_assoc : ∀ (a b c : G), a * b * c = a * (b * c))
@@ -64,14 +66,15 @@ Here are the four lemmas we will prove.
 -/
 namespace group2
 
-variables {G : Type} [group2 G]  
+-- let `G` be a group.
+variables {G : Type} [group2 G]
 
 /-
 We start by proving `mul_left_cancel : ∀ a b c, a * b = a * c → b = c`.
 We assume `Habac : a * b = a * c` and deduce `b = c`. I've written
 down the maths proof. Your job is to supply the rewrites that are
 necessary to justify each step. Each rewrite is either one of
-the axioms of a group2, or an assumption. A reminder of the axioms:
+the axioms of a group, or an assumption. A reminder of the axioms:
 
 `mul_assoc : ∀ (a b c : G), a * b * c = a * (b * c)`
 `one_mul : ∀ (a : G), 1 * a = a`
@@ -100,7 +103,7 @@ Now use associativity and left cancellation on on the left, to reduce
 to `h`. 
 
 Note that `mul_left_cancel` is a function, and its first input is 
-called `a`, but you had better give it `a⁻¹` insted.  
+called `a`, but you had better give it `a⁻¹` instead.  
 -/
 lemma mul_eq_of_eq_inv_mul {a x y : G} (h : x = a⁻¹ * y) : a * x = y :=
 begin
@@ -151,7 +154,7 @@ to solve it completely, then great! If it does not, but you feel like
 it should have done, you might want to tag more lemmas with `@[simp]`.
 `simp` should only be used to completely close goals. We are now
 going to train the simplifier to solve the example above (indeed, we are
-going to train it to reduce an arbitrary element of a free group2 into
+going to train it to reduce an arbitrary element of a free group into
 a unique normal form, so it will solve any equalities which are true
 for all group2s, like the example above).
 
@@ -176,7 +179,7 @@ the theorems below
 
 the right hand side is simpler than the left hand side.
 
-Let's train Lean's simplifier! Let's teach it the axioms of a group2 next:
+Let's train Lean's simplifier! Let's teach it the axioms of a `group2` next:
 
 -/
 
@@ -235,7 +238,7 @@ term rewrite system" that transforms every term into a unique
 normal form. The system it produces is precisely the `simp`
 lemmas which we haven proven above! See
 
-https://en.wikipedia.org/wiki/Word_problem_(mathematics)#Example:_A_term_rewriting_system_to_decide_the_word_problem_in_the_free_group2
+https://en.wikipedia.org/wiki/Word_problem_(mathematics)#Example:_A_term_rewriting_system_to_decide_the_word_problem_in_the_free_group
 
 for more information. I won't talk any more about the Knuth-Bendix
 algorithm because it's really computer science, and I don't really
@@ -252,8 +255,8 @@ example : (a * b) * 1⁻¹⁻¹ * b⁻¹ * (a⁻¹ * a⁻¹⁻¹⁻¹) * a = 1 :
 -- try your own identities. `simp` will solve them all!
 
 /-
-This is everything I wanted to show you about group2s and the simplifier today.
-You can now either go on to subgroup2s in Part B, or practice your group2
+This is everything I wanted to show you about groups and the simplifier today.
+You can now either go on to subgroups in Part B, or practice your group
 theory skills by proving the lemmas below.
 -/
 
