@@ -287,13 +287,11 @@ begin
   sorry
 end
 
--- Another useful lemma for the interface
 lemma inv_eq_of_mul_eq_one {a b : G} (h : a * b = 1) : a⁻¹ = b :=
 begin
   sorry,
 end
 
--- you don't even need `begin / end` to do a `calc`.
 lemma unique_left_id {e : G} (h : ∀ x : G, e * x = x) : e = 1 :=
 begin
   sorry
@@ -312,30 +310,21 @@ begin
     rwa hxy }
 end
 
+-- You don't even need to go into tactic mode (begin/end) to use `calc`:
 lemma mul_right_cancel (a x y : G) (Habac : x * a = y * a) : x = y := 
 calc x = x * 1 : by rw mul_one
-  ...  = x * (a * a⁻¹) : by rw mul_right_inv
-  ...  = x * a * a⁻¹ : by rw mul_assoc
-  ...  = y * a * a⁻¹ : by rw Habac
-  ...  = y * (a * a⁻¹) : by rw mul_assoc
-  ...  = y * 1 : by rw mul_right_inv
-  ...  = y : by rw mul_one
+  -- missing arguments here
+  ... = y : by sorry
 
 -- `↔` lemmas are good simp lemmas too.
 @[simp] theorem inv_inj_iff {a b : G}: a⁻¹ = b⁻¹ ↔ a = b :=
 begin
-  split,
-  { intro h,
-    rw [← inv_inv a, h, inv_inv b] },
-  { rintro rfl, -- define b to be a
-    refl }  
+  sorry
 end   
 
 theorem inv_eq {a b : G}: a⁻¹ = b ↔ b⁻¹ = a :=
 begin
-  split;
-  { rintro rfl,
-    rw inv_inv }
+  sorry
 end  
 
 end group
