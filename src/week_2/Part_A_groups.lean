@@ -22,8 +22,7 @@ The `group` class will extend `has_mul`, `has_one` and `has_inv`.
 `has_one G` means that `G` has a `1 : G`
 `has_inv G` means that `G` has an `⁻¹ : G → G`
 
-All of `*`, `1` and `⁻¹` are notation, and no axioms are assumed
-for any of them.
+All of `*`, `1` and `⁻¹` are notation for functions -- no axioms yet.
 
 A `group` has all of this notation, and the group axioms too. 
 Let's now define the group class.
@@ -149,7 +148,7 @@ We are going to train a simple AI called `simp` to do the same thing.
 Lean's simplifier `simp` is a "term rewriting system". This means
 that if you teach it a bunch of theorems of the form `A = B` or
 `P ↔ Q` (by tagging them with the `@[simp]` attribute) and then give
-it a complicated equality, like
+it a complicated goal, like
 
 `example : (a * b) * 1⁻¹⁻¹ * b⁻¹ * (a⁻¹ * a⁻¹⁻¹⁻¹) * a = 1`
 
@@ -161,7 +160,7 @@ it should have done, you might want to tag more lemmas with `@[simp]`.
 going to train the simplifier to solve the example above (indeed, we are
 going to train it to reduce an arbitrary element of a free group into
 a unique normal form, so it will solve any equalities which are true
-for all group2s, like the example above).
+for all groups, like the example above).
 
 ## Important note
 
@@ -171,7 +170,7 @@ If you tell it that `A = B` is a `simp` lemma then it will replace `A`s with
 `B`s, but it will never replace `B`s with `A`s. If you tag a proof
 of `A = B` with `@[simp]` and you also tag a proof of `B = A` with
 `@[simp]`, then the simplifier will get stuck in an infinite loop when
-it runs into an `A`!
+it runs into an `A`! Equality should not be thought of as symmetric here.
 
 Because the simplifier works from left to right, an important
 rule of thumb is that if `A = B` is a `simp` lemma, then `B` should
@@ -182,10 +181,13 @@ the theorems below
 `@[simp] theorem mul_one (a : G) : a * 1 = a`
 `@[simp] theorem mul_right_inv (a : G) : a * a⁻¹ = 1`
 
-the right hand side is simpler than the left hand side.
+the right hand side is simpler than the left hand side. It would be a
+> disaster to tag `a = a * 1` with the `@[simp]` tag -- can you see why?
 
-Let's train Lean's simplifier! Let's teach it the axioms of a `group2` next:
 
+Let's train Lean's simplifier! Let's teach it the axioms of a `group` next.
+We have already done the axioms, so we have to retrospectively tag
+them with the `@[simp]` attribute.
 -/
 
 attribute [simp] one_mul mul_left_inv mul_assoc
