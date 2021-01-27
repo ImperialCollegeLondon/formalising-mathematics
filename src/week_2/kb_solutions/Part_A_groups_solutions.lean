@@ -22,7 +22,7 @@ The `group` class will extend `has_mul`, `has_one` and `has_inv`.
 `has_one G` means that `G` has a `1 : G`
 `has_inv G` means that `G` has an `⁻¹ : G → G`
 
-All of `*`, `1` and `⁻¹` are notation -- no axioms yet.
+All of `*`, `1` and `⁻¹` are just notation for functions -- no axioms yet.
 
 A `group` has all of this notation, and the group axioms too. 
 Let's now define the group class.
@@ -101,7 +101,7 @@ end
 /-
 Next we prove that if `x = a⁻¹ * y` then `a * x = y`. Remember we are still
 missing `mul_one` and `mul_right_inv`. A proof that avoids them is
-the following: we want `a * x = y`. ANow `apply`ing the previous lemma, it
+the following: we want `a * x = y`. Now `apply`ing the previous lemma, it
 suffices to prove that `a⁻¹ * (a * x) = a⁻¹ * y.`
 Now use associativity and left cancellation on on the left, to reduce
 to `h`. 
@@ -262,7 +262,7 @@ https://en.wikipedia.org/wiki/Word_problem_(mathematics)#Example:_A_term_rewriti
 for more information. I won't talk any more about the Knuth-Bendix
 algorithm because it's really computer science, and I don't really
 understand it, but apparently if you apply it to polynomial rings
-then you get the Buchberger's algorithm for computing Gröbner bases.
+then you get Buchberger's algorithm for computing Gröbner bases.
 
 -/
 
