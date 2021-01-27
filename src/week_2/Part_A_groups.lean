@@ -204,7 +204,10 @@ first one for you.
 
 @[simp] lemma inv_mul_cancel_left : a⁻¹ * (a * b) = b :=
 begin
-  sorry
+  rw ← mul_assoc, -- the simplifier wouldn't do it that way
+                  -- so we have to do it manually
+  simp, -- simplifier takes it from here, 
+        -- rewriting a⁻¹ * a to 1 and then 1 * b to b
 end
 
 @[simp] lemma mul_inv_cancel_left : a * (a⁻¹ * b) = b :=
