@@ -5,48 +5,48 @@ import tactic
 # Groups
 
 Definition and basic properties of a group.
-We call them `group2` because Lean has groups already.
 
 -/
+
+-- Technical note: We work in a namespace `xena` because Lean already has groups.
+namespace xena
+-- Now our definition of a group will really be called `xena.group`. 
 
 /-
 
 ## Definition of a group
 
-The `group2` class will extend `has_mul`, `has_one` and `has_inv`. 
+The `group` class will extend `has_mul`, `has_one` and `has_inv`. 
 
 `has_mul G` means that `G` has a multiplication `* : G → G → G`
 `has_one G` means that `G` has a `1 : G`
 `has_inv G` means that `G` has an `⁻¹ : G → G`
 
-All of `*`, `1` and `⁻¹` are notation, and no axioms are assumed
-for any of them.
+All of `*`, `1` and `⁻¹` are notation -- no axioms yet.
 
-A `group2` has all of this notation, and the group axioms too. 
-Let's now define the group2 class.
+A `group` has all of this notation, and the group axioms too. 
+Let's now define the group class.
 -/
 
-/-- A `group2` structure on a type `G` is multiplication, identity and inverse,
+/-- A `group` structure on a type `G` is multiplication, identity and inverse,
 plus the usual axioms -/
-class group2 (G : Type) extends has_mul G, has_one G, has_inv G :=
+class group (G : Type) extends has_mul G, has_one G, has_inv G :=
 (mul_assoc : ∀ (a b c : G), a * b * c = a * (b * c))
 (one_mul : ∀ (a : G), 1 * a = a)
 (mul_left_inv : ∀ (a : G), a⁻¹ * a = 1)
 
 /-
 
-Formally, a term of type `group2 G` is now a multiplication, 1, and inverse
-function, together with the notation, and satisfying the axioms.
+Formally, a term of type `group G` is now the following data:
+a multiplication, 1, and inverse function,
+and proofs that the group axioms are satisfied.
 
-The way to say "let G be a group" is now `(G : Type) [group2 G]`
+The way to say "let G be a group" is now `(G : Type) [group G]`
 
 The square bracket notation is the notation used for classes.
-Formally, it means "put a term of type `group2 G` into the type class
-inference system"
-
--/
-
-/-
+Formally, it means "put a term of type `group G` into the type class
+inference system". In practice this just means "you can use group
+notation and axioms in proofs, and Lean will figure out why they're true"
 
 We have been extremely mean with our axioms. Some authors also add
 the axioms `mul_one : ∀ (a : G), a * 1 = a`
@@ -57,17 +57,21 @@ to prove them. As you might imagine, mathematically this is pretty
 much the trickiest part, because we have to be careful not to
 accidentally assume these axioms when we're proving them.
 
-Here are the four lemmas we will prove.
+Here are the four lemmas we will prove next.
 
 `mul_left_cancel : ∀ (a b c : G), a * b = a * c → b = c`
 `mul_eq_of_eq_inv_mul {a x y : G} : x = a⁻¹ * y → a * x = y`
 `mul_one (a : G) : a * 1 = a`
 `mul_right_inv (a : G) : a * a⁻¹ = 1`
 -/
-namespace group2
+
+-- We're proving things about groups so let's work in the `group` namespace
+-- (really this is `xena.group`)
+
+namespace group
 
 -- let `G` be a group.
-variables {G : Type} [group2 G]
+variables {G : Type} [group G]
 
 /-
 We start by proving `mul_left_cancel : ∀ a b c, a * b = a * c → b = c`.
@@ -149,7 +153,7 @@ We are going to train a simple AI called `simp` to do the same thing.
 Lean's simplifier `simp` is a "term rewriting system". This means
 that if you teach it a bunch of theorems of the form `A = B` or
 `P ↔ Q` (by tagging them with the `@[simp]` attribute) and then give
-it a complicated equality, like
+it a complicated goal, like
 
 `example : (a * b) * 1⁻¹⁻¹ * b⁻¹ * (a⁻¹ * a⁻¹⁻¹⁻¹) * a = 1`
 
@@ -171,7 +175,7 @@ If you tell it that `A = B` is a `simp` lemma then it will replace `A`s with
 `B`s, but it will never replace `B`s with `A`s. If you tag a proof
 of `A = B` with `@[simp]` and you also tag a proof of `B = A` with
 `@[simp]`, then the simplifier will get stuck in an infinite loop when
-it runs into an `A`!
+it runs into an `A`! Equality should not be thought of as symmetric here.
 
 Because the simplifier works from left to right, an important
 rule of thumb is that if `A = B` is a `simp` lemma, then `B` should
@@ -182,9 +186,12 @@ the theorems below
 `@[simp] theorem mul_one (a : G) : a * 1 = a`
 `@[simp] theorem mul_right_inv (a : G) : a * a⁻¹ = 1`
 
-the right hand side is simpler than the left hand side.
+the right hand side is simpler than the left hand side. It would be a
+disaster to tag `a = a * 1` with the `@[simp]` tag -- can you see why?
 
-Let's train Lean's simplifier! Let's teach it the axioms of a group next:
+Let's train Lean's simplifier! Let's teach it the axioms of a group next.
+We have already done the axioms, so we have to retrospectively tag
+them with the `@[simp]` attribute.
 
 -/
 
@@ -233,7 +240,7 @@ begin
   simp,
 end
 
-@[simp] lemma inv_inv : a ⁻¹ ⁻¹ = a :=
+@[simp] lemma inv_inv : (a ⁻¹) ⁻¹ = a :=
 begin
   apply mul_left_cancel a⁻¹,
   simp,
@@ -371,4 +378,7 @@ begin
     rw inv_inv }
 end  
 
-end group2
+end group
+
+end xena
+
