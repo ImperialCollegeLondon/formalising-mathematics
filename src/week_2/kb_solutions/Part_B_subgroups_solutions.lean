@@ -6,7 +6,6 @@ import week_2.Part_A_groups
 
 Lean has subgroups already, so we'll call ours subgroup2.
 
-
 -/
 
 /-- A subgroup of a group G is a subset containing 1
@@ -17,10 +16,22 @@ structure subgroup2 (G : Type) [group2 G] :=
 (mul_mem' {x y} : x ∈ carrier → y ∈ carrier → x * y ∈ carrier)
 (inv_mem' {x} : x ∈ carrier → x⁻¹ ∈ carrier)
 
+/-
 
--- we put dashes in all the names, because we'll define
--- non-dashed versions which don't mention `carrier` at all
--- and just talk about elements of the subgroup2.
+At this point, here's what we have.
+
+A term `H` of type `subgroup2 G`, written `H : subgroup2 G`, is a
+quadruple `H.carrier` (a subset of `G`), `H.one_mem'` (a proof
+that `1 ∈ H.carrier`), `H.mul_mem'` (a proof that if `x` and `y` are in
+`H.carrier` then so is `x*y`) and `H.inv_mem'` (saying `H` is closed under
+inverses). Note here that the _type_ of `x` and `y` is still `G`, 
+and `x ∈ carrier` is a Proposition. Note also that `x : carrier` doesn't
+make sense (`carrier` is a term, not a type, rather counterintuitively).
+
+This kind of stinks. I don't want to write `H.carrier` everywhere.
+I want to write `H`. Let's start by sorting this out.
+
+-/
 
 namespace subgroup2
 
@@ -29,46 +40,112 @@ open group2
 -- let G be a group and let H and K be subgroups
 variables {G : Type} [group2 G] (H K : subgroup2 G)
 
--- Instead let's define ∈ directly
+-- If `x : G` and `H : subgroup2 G` then let's define `x ∈ H` to mean
+-- `x ∈ H.carrier`
 instance : has_mem G (subgroup2 G) := ⟨λ m H, m ∈ H.carrier⟩
 
--- subgroups form a lattice -- MOVE TO LATER
-instance : has_le (subgroup2 G) := ⟨λ S T, S.carrier ⊆ T.carrier⟩
+-- Now let's define theorems without the `'`s in, which use this
+-- more normal notation
+
+/-- A subgroup2 contains the group's 1. -/
+theorem one_mem : (1 : G) ∈ H :=
+begin
+  apply H.one_mem',
+end
+
+/-- A subgroup2 is closed under multiplication. -/
+theorem mul_mem {x y : G} : x ∈ H → y ∈ H → x * y ∈ H :=
+begin
+  apply H.mul_mem',
+end
+
+/-- A subgroup2 is closed under inverse -/
+theorem inv_mem {x : G} : x ∈ H → x⁻¹ ∈ H :=
+begin
+  apply H.inv_mem',
+end
+
+-- let's tell the simplifier that we would rather talk about `g ∈ H`
+-- than `g ∈ H.carrier`
+
+@[simp] lemma mem_coe {g : G} : g ∈ H.carrier ↔ g ∈ H := iff.rfl
+
+/-
+
+So here are the three theorems which you need to remember about subgroups.
+Say `H : subgroup G`. Then:
+
+`H.one_mem : (1 : G) ∈ H`
+`H.mul_mem {x y : G} : x ∈ H → y ∈ H → x * y ∈ H`
+`H.inv_mem {x : G} : x ∈ H → x⁻¹ ∈ H`
+
+-/
+
+-- now we can prove basic theorems about subgroups using this sensible notation
+-- Remember that `group2.inv_inv x` is the statement that `x⁻¹⁻¹ = x`
+
+@[simp] theorem inv_mem_iff {x :G} : x⁻¹ ∈ H ↔ x ∈ H := 
+begin
+  split,
+  { intro h,
+    rw ← group2.inv_inv x,
+    apply H.inv_mem,
+    assumption },
+  { apply H.inv_mem },
+end
+
+/-
+Subgroups are extensional objects (like most things in mathematics):
+two subgroups are equal if they have the same underlying subset,
+and also if they have the same underlying elements.
+Let's prove variants of this triviality now.
+-/
 
 /-- Two subgroups are equal if the underlying subsets are equal. -/
 theorem ext' {H K : subgroup2 G} (h : H.carrier = K.carrier) : H = K :=
-by cases H; cases K; congr'
+begin
+  -- first take H and K apart
+  cases H,
+  cases K,
+  -- and now it must be obvious
+  simp * at *,
+end
 
-/-- Two subgroup2s are equal if they have the same elements. -/
-theorem ext {H K : subgroup2 G}
-  (h : ∀ x, x ∈ H ↔ x ∈ K) : H = K := ext' $ set.ext h
+-- here's a variant
 
-lemma mem_coe {g : G} : g ∈ H.carrier ↔ g ∈ H := iff.rfl
-
-/-- Two subgroup2s are equal if and only if the underlying subsets are equal. -/
+/-- Two subgroups are equal if and only if the underlying subsets are equal. -/
 protected theorem ext'_iff {H K : subgroup2 G} :
   H.carrier = K.carrier ↔ H = K :=
-⟨ext', λ h, h ▸ rfl⟩
+begin
+  split,
+  { exact ext' },
+  { intro h,
+    rw h, }
+end
 
-attribute [ext] subgroup2.ext
+-- to do this next one, first apply the `ext'` theorem we just proved,
+-- and then use the `ext` tactic (which works on sets)
 
-/-- A subgroup2 contains the group's 1. -/
-theorem one_mem : (1 : G) ∈ H := H.one_mem'
+/-- Two subgroups are equal if they have the same elements. -/
+@[ext] theorem ext {H K : subgroup2 G} (h : ∀ x, x ∈ H ↔ x ∈ K) : H = K :=
+begin
+  -- first apply ext' to reduce to checking the carriers are equal
+  apply ext',
+  -- now use the ext tactic to reduce to checking the elements of
+  -- the carriers are equal
+  ext,
+  -- and now this is by definition what h says
+  apply h,
+end
 
-/-- A subgroup2 is closed under multiplication. -/
-theorem mul_mem {x y : G} : x ∈ H → y ∈ H → x * y ∈ H := subgroup2.mul_mem' _
+/-
+We tagged that theorem with `ext`, so now if you ever have a goal
+of proving that two subgroups are equal, you can apply the `ext`
+tactic to reduce to showing that they have the same elements.
+-/
 
-/-- A subgroup2 is closed under inverse -/
-theorem inv_mem {x : G} : x ∈ H → x⁻¹ ∈ H := subgroup2.inv_mem' _ 
-
---/-- A subgroup2 is closed under integer powers -/
--- theorem pow_mem {x : G} {n : ℤ} : x ∈ H → x ^ n ∈ H :=
--- begin
---   sorry -- do I do this?
--- end
-
-@[simp] theorem inv_mem_iff {x :G} : x⁻¹ ∈ H ↔ x ∈ H := 
-  ⟨ λ hx, inv_inv x ▸ H.inv_mem hx, H.inv_mem ⟩ 
+-- subgroups form a lattice -- MOVE TO LATER
+instance : has_le (subgroup2 G) := ⟨λ S T, S.carrier ⊆ T.carrier⟩
 
 -- Coersion to group
 -- Coercion from subgroup2 to underlying type
@@ -76,29 +153,6 @@ theorem inv_mem {x : G} : x ∈ H → x⁻¹ ∈ H := subgroup2.inv_mem' _
 instance : has_coe (subgroup2 G) (set G) := ⟨subgroup2.carrier⟩
 
 lemma mem_coe' {g : G} : g ∈ (H : set G) ↔ g ∈ H := iff.rfl
-
-
-
-
-end subgroup2
-
-
-/-
-An API for subgroups
-
-Mathematician-friendly
-
-Let G be a `group2`. The type of subgroups of G is `subgroup2 G`. 
-In other words, if `H : subgroup2 G` then H is a subgroup of G. 
-The three basic facts you need to know about H are:
-
-H.one_mem : (1 : G) ∈ H
-H.mul_mem {x y : G} : x ∈ H → y ∈ H → x * y ∈ H
-H.inv_mem {x : G} : x ∈ H → x⁻¹ ∈ H
-
--/
-
-variables {G : Type} [group2 G]
 
 
 
@@ -118,13 +172,7 @@ max and min (and even sup and inf).
 We will prove this here.
 -/
 
-open_locale classical
-
-open group2 set
-
-variables {H K : subgroup2 G}
-
-namespace subgroup2
+open set
 
 -- The intersect of two subgroup2s is also a subgroup2
 def inf (H K : subgroup2 G) : subgroup2 G :=
@@ -151,16 +199,6 @@ instance : has_Inf (subgroup2 G) :=
   inv_mem' := λ x hx, mem_bInter $ λ i h,
     i.inv_mem (by apply mem_bInter_iff.1 hx i h) }⟩
 
-variable {ι : Type*}
-
--- The intersect of a set of subgroup2s is a subgroup2
-def infi (H : ι → subgroup2 G) : subgroup2 G := 
-{ carrier := ⋂ i, H i,
-  one_mem' := mem_Inter.mpr $ λ i, (H i).one_mem,
-  mul_mem' := λ _ _ hx hy, mem_Inter.mpr $ λ i, 
-  by {rw mem_Inter at *, from mul_mem (H i) (hx i) (hy i)},
-  inv_mem' := λ x hx, mem_Inter.mpr $ λ i, (H i).inv_mem $ by apply mem_Inter.mp hx }
-
 def closure (S : set G) : subgroup2 G := Inf {H | S ⊆ H}
 
 lemma mem_closure_iff {S : set G} {x : G} : 
@@ -173,7 +211,7 @@ form a galois_insertion with the coercion to set
 lemma le_closure (S : set G) : S ≤ closure S :=
 λ s hs H ⟨y, hy⟩, by rw ←hy; simp; exact λ hS, hS hs
 
-lemma closure_le (S : set G) (H : subgroup2 G) : closure S ≤ H ↔ S ≤ H :=
+lemma closure_le (S : set G) (H : subgroup2 G) : closure S ≤ H ↔ S ⊆ H :=
 begin
   split,
     { intro h, refine subset.trans (le_closure _) h },
@@ -219,7 +257,7 @@ instance : partial_order (subgroup2 G) :=
 Finially we prove that subgroups form a galois_insertion with the coercion 
 to set.
 -/
-def gi : @galois_insertion (set G) (subgroup2 G) _ _ closure (λ H, H.carrier) :=
+def gi : galois_insertion (closure : set G → subgroup2 G) (coe : subgroup2 G → set G) :=
 { choice := λ S _, closure S,
   gc := λ H K,
     begin
@@ -236,35 +274,10 @@ With that it follows that subgroup2s form a complete lattice!
 instance : complete_lattice (subgroup2 G) :=
 {.. galois_insertion.lift_complete_lattice gi}
 
-def trivial : subgroup2 G := 
-  ⟨{(1 : G)}, set.mem_singleton 1, 
-    λ _ _ hx hy, by rw set.mem_singleton_iff at *; simp [hx, hy],
-    λ _ hx, by rw set.mem_singleton_iff at *; rw hx; exact group2.one_inv⟩
-
-lemma mem_trivial_iff (g : G) : g ∈ (trivial : subgroup2 G) ↔ g = 1 := iff.rfl
-
-lemma mem_trivial_carrier_iff (g : G) : g ∈ (trivial : subgroup2 G).carrier ↔ g = 1 := iff.rfl
-
-lemma bot_eq_trivial : (⊥ : subgroup2 G) = trivial :=
-begin
-  apply le_antisymm,
-    { change closure (∅ : set G) ≤ _,
-      rw closure_le, finish },
-    { intros x hx,
-      change x ∈ {(1 : G)} at hx, 
-      rw set.mem_singleton_iff at hx,
-      subst hx, unfold_coes, rw mem_coe,
-      exact one_mem ⊥ }
-end 
-
-lemma bot_eq_singleton_one : ((⊥ : subgroup2 G) : set G) = {1} :=
-by rw bot_eq_trivial; refl
-
-lemma mem_bot_iff {x : G} : x ∈ (⊥ : subgroup2 G) ↔ x = 1 :=
-begin 
-  split; intro h,
-    rw [← mem_singleton_iff, ← bot_eq_singleton_one], exact h,
-    rw [bot_eq_trivial], exact h
-end
-
 end subgroup2
+
+/-
+
+Could do bot and top, but would have to practice stuff like mem_singleton
+
+-/
