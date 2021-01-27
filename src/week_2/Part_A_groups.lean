@@ -5,15 +5,18 @@ import tactic
 # Groups
 
 Definition and basic properties of a group.
-We call them `group2` because Lean has groups already.
 
 -/
+
+-- Technical note: We work in a namespace `xena` because Lean already has groups.
+namespace xena
+-- Now our definition of a group will really be called `xena.group`. 
 
 /-
 
 ## Definition of a group
 
-The `group2` class will extend `has_mul`, `has_one` and `has_inv`. 
+The `group` class will extend `has_mul`, `has_one` and `has_inv`. 
 
 `has_mul G` means that `G` has a multiplication `* : G → G → G`
 `has_one G` means that `G` has a `1 : G`
@@ -22,31 +25,29 @@ The `group2` class will extend `has_mul`, `has_one` and `has_inv`.
 All of `*`, `1` and `⁻¹` are notation, and no axioms are assumed
 for any of them.
 
-A `group2` has all of this notation, and the group axioms too. 
-Let's now define the group2 class.
+A `group` has all of this notation, and the group axioms too. 
+Let's now define the group class.
 -/
 
-/-- A `group2` structure on a type `G` is multiplication, identity and inverse,
+/-- A `group` structure on a type `G` is multiplication, identity and inverse,
 plus the usual axioms -/
-class group2 (G : Type) extends has_mul G, has_one G, has_inv G :=
+class group (G : Type) extends has_mul G, has_one G, has_inv G :=
 (mul_assoc : ∀ (a b c : G), a * b * c = a * (b * c))
 (one_mul : ∀ (a : G), 1 * a = a)
 (mul_left_inv : ∀ (a : G), a⁻¹ * a = 1)
 
 /-
 
-Formally, a term of type `group2 G` is now a multiplication, 1, and inverse
-function, together with the notation, and satisfying the axioms.
+Formally, a term of type `group G` is now the following data:
+a multiplication, 1, and inverse function,
+and proofs that the group axioms are satisfied.
 
-The way to say "let G be a group" is now `(G : Type) [group2 G]`
+The way to say "let G be a group" is now `(G : Type) [group G]`
 
 The square bracket notation is the notation used for classes.
-Formally, it means "put a term of type `group2 G` into the type class
-inference system"
-
--/
-
-/-
+Formally, it means "put a term of type `group G` into the type class
+inference system". In practice this just means "you can use group
+notation and axioms in proofs, and Lean will figure out why they're true"
 
 We have been extremely mean with our axioms. Some authors also add
 the axioms `mul_one : ∀ (a : G), a * 1 = a`
@@ -57,17 +58,21 @@ to prove them. As you might imagine, mathematically this is pretty
 much the trickiest part, because we have to be careful not to
 accidentally assume these axioms when we're proving them.
 
-Here are the four lemmas we will prove.
+Here are the four lemmas we will prove next.
 
 `mul_left_cancel : ∀ (a b c : G), a * b = a * c → b = c`
 `mul_eq_of_eq_inv_mul {a x y : G} : x = a⁻¹ * y → a * x = y`
 `mul_one (a : G) : a * 1 = a`
 `mul_right_inv (a : G) : a * a⁻¹ = 1`
 -/
-namespace group2
+
+-- We're proving things about groups so let's work in the `group` namespace
+-- (really this is `xena.group`)
+
+namespace group
 
 -- let `G` be a group.
-variables {G : Type} [group2 G]
+variables {G : Type} [group G]
 
 /-
 We start by proving `mul_left_cancel : ∀ a b c, a * b = a * c → b = c`.
@@ -334,4 +339,7 @@ begin
   sorry
 end  
 
-end group2
+end group
+
+end xena
+
