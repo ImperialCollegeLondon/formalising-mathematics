@@ -466,7 +466,7 @@ You might find `le_antisymm : H ≤ K → K ≤ H → H = K` from above useful
 Reminder: X ⊆ Y means `∀ g, g ∈ X → g ∈ Y` and it's definitional,
 so you can just start this with `intro g`.
 -/
-lemma subset_closure (S : set G) : S ⊆ closure S :=
+lemma subset_closure (S : set G) : S ⊆ ↑(closure S) :=
 begin
   intro g,
   intro hgS,
