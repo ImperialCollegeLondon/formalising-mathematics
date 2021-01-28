@@ -58,25 +58,25 @@ begin
   exact le_of_lt (h ε ε_pos),
 end
 
--- The next few things should be hidden
-@[user_attribute]
-meta def ineq_rules : user_attribute :=
-{ name := `ineq_rules,
-  descr := "lemmas usable to prove inequalities" }
+-- -- The next few things should be hidden
+-- @[user_attribute]
+-- meta def ineq_rules : user_attribute :=
+-- { name := `ineq_rules,
+--   descr := "lemmas usable to prove inequalities" }
 
-attribute [ineq_rules] add_lt_add le_max_left le_max_right
+-- attribute [ineq_rules] add_lt_add le_max_left le_max_right
 
-meta def obvious_ineq := `[linarith <|> apply_rules ineq_rules]
-run_cmd add_interactive [`obvious_ineq]
--- end of scary things
+-- meta def obvious_ineq := `[linarith <|> apply_rules ineq_rules]
+-- run_cmd add_interactive [`obvious_ineq]
+-- -- end of scary things
 
 
-noncomputable theory
-local attribute [instance, priority 0] classical.prop_decidable
+--noncomputable theory
+--local attribute [instance, priority 0] classical.prop_decidable
 
 -- Let's also put things into an M1P1 namespace so we can define
 -- stuff which is already defined in mathlib without breaking anything.
-namespace M1P1
+namespace xena
 
 -- the maths starts here.
 
@@ -160,17 +160,17 @@ begin
   -- Let ε be any positive number, and let's prove |l - m| < ε
   intros ε ε_pos,
   -- Because aₙ → l, there exists Nₗ such that n ≥ Nₗ → |aₙ - l| < ε/2
-  cases hl (ε/2) (by obvious_ineq) with Nₗ Hₗ,
+  cases hl (ε/2) (by linarith) with Nₗ Hₗ,
   -- Because aₙ → m, there exists Nₘ such that n ≥ Nₘ → |aₙ - m| < ε/2
-  cases hm (ε/2) (by obvious_ineq) with Nₘ Hₘ,
+  cases hm (ε/2) (by linarith) with Nₘ Hₘ,
   -- The trick is to let N be the max of Nₗ and Nₘ
   let N := max Nₗ Nₘ,
   -- Now clearly N ≥ Nₗ...
-  have H₁ : Nₗ ≤ N := by obvious_ineq,
+  have H₁ : Nₗ ≤ N := le_max_left _ _,
   -- ... so |a_N - l| < ε/2
   have H : | a N - l| < ε/2 := Hₗ N H₁,
   -- similarly N ≥ Nₘ...
-  have H₂ : Nₘ ≤ N := by obvious_ineq,
+  have H₂ : Nₘ ≤ N := le_max_right _ _,
   -- ... so |a_N - m| < ε/2 too
   have H' : | a N - m| < ε/2 := Hₘ N H₂,
   -- We now combine
@@ -178,7 +178,7 @@ begin
     |l - m| = |(l - a N) + (a N - m)| : by ring
         ... ≤ |l - a N| + |a N - m|   : abs_add _ _
         ... = |a N - l | + |a N - m|  : by rw abs_sub
-        ... < ε/2 + ε/2               : by obvious_ineq
+        ... < ε/2 + ε/2               : by linarith
         ... = ε                       : by ring,
 end
 
@@ -199,8 +199,8 @@ begin
   -- and let's use that 
   use N,
   -- Of course N ≥ M₁ and N ≥ M₂
-  have H₁ : N ≥ M₁ := by obvious_ineq,
-  have H₂ : N ≥ M₂ := by obvious_ineq,
+  have H₁ : N ≥ M₁ := le_max_left _ _,
+  have H₂ : N ≥ M₂ := le_max_right _ _,
   -- Now say n ≥ N.
   intros n Hn,
   -- Then obviously n ≥ M₁...
@@ -445,4 +445,4 @@ begin
     done
 end
 
-end M1P1
+end xena
