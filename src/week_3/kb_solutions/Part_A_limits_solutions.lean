@@ -51,8 +51,12 @@ import tactic.linarith data.real.basic
 local notation `|` x `|` := abs x
 
 lemma zero_of_abs_lt_all (x : ℝ) (h : ∀ ε > 0, |x| < ε) : x = 0 :=
-sorry
---eq_zero_of_abs_eq_zero $ eq_of_le_of_forall_le_of_dense (abs_nonneg x) $ λ ε ε_pos, le_of_lt (h ε ε_pos)
+begin
+  rw ← abs_eq_zero,
+  apply eq_of_le_of_forall_le_of_dense (abs_nonneg x),
+  intros ε ε_pos,
+  exact le_of_lt (h ε ε_pos),
+end
 
 -- The next few things should be hidden
 @[user_attribute]
@@ -145,11 +149,6 @@ end
 
 -- We now start on the proof of the theorem that if a sequence has
 -- two limits, they are equal. 
-
--- Next lemma could be either hidden of given a user-friendly proof
-lemma zero_of_abs_lt_all (x : ℝ) (h : ∀ ε > 0, |x| < ε) : x = 0 :=
-sorry
---eq_zero_of_abs_eq_zero $ eq_of_le_of_forall_le_of_dense (abs_nonneg x) $ λ ε ε_pos, le_of_lt (h ε ε_pos)
 
 -- We're ready to prove the theorem.
 theorem limits_are_unique (a : ℕ → ℝ) (l m : ℝ) (hl : is_limit a l)
@@ -409,9 +408,27 @@ begin
   unfold abs,unfold max,split_ifs;intros;linarith
 end
 
-end M1P1
-
-#exit
+lemma lim_times_const (a : ℕ → ℝ) (l c : ℝ) (h : is_limit a l) :
+  is_limit (λ n, c * (a n)) (c * l) :=
+begin
+  by_cases hc : c = 0,
+  { subst hc,
+    convert tendsto_const 0,
+    { ext, simp },
+    { simp } },
+  { have hc' : 0 < |c| := by simp [hc],
+    intros ε hε,
+    have hεc : 0 < ε / |c| := div_pos hε hc',
+    specialize h (ε/|c|) hεc,
+    cases h with N hN,
+    use N,
+    intros n hn,
+    specialize hN n hn,
+    dsimp only,
+    rw [← mul_sub, abs_mul],
+    rw ← lt_div_iff' hc',
+    exact hN }
+end
 
 /- Lemma
 If $\lim_{n \to \infty} a_n = \alpha$ and $\lim_{n \to \infty} b_n = \beta$
@@ -422,8 +439,10 @@ lemma lim_linear (a : ℕ → ℝ) (b : ℕ → ℝ) (α β c d : ℝ)
     (ha : is_limit a α) (hb : is_limit b β) : 
     is_limit ( λ n, c * (a n) + d * (b n) ) (c * α + d * β) :=
 begin
-    apply lim_add,
+    apply tendsto_add,
     exact lim_times_const a α c ha,
     exact lim_times_const b β d hb,
     done
 end
+
+end M1P1
