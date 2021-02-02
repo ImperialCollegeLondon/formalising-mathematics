@@ -77,7 +77,7 @@ API for `abs`: abs_add and abs_lt
 -/
 -- THIS IS FOR THE FINAL VERSION
 -- this needs commenting
-theorem is_limit_subsingleton (a : ℕ → ℝ) (l m : ℝ) (hl : is_limit a l)
+theorem is_limit_subsingleton {a : ℕ → ℝ} {l m : ℝ} (hl : is_limit a l)
 (hm : is_limit a m) : l = m :=
 begin
   by_contra h,
@@ -104,7 +104,7 @@ end
 -- Maths proof: choose M₁ large enough so that n ≥ M₁ implies |aₙ - l|<ε/2
 -- Maths proof: choose M₂ large enough so that n ≥ M₂ implies |bₙ - m|<ε/2
 -- Now N := max M₁ M₂ works
-theorem is_limit_add (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
+theorem is_limit_add {a b : ℕ → ℝ} {l m : ℝ}
   (h1 : is_limit a l) (h2 : is_limit b m) :
   is_limit (a + b) (l + m) :=
 begin
@@ -142,7 +142,7 @@ begin
 end
 
 -- this needs to be in because it's my proof for is_limit_mul
-lemma is_limit_mul_const (a : ℕ → ℝ) (l c : ℝ) (h : is_limit a l) :
+lemma is_limit_mul_const_left {a : ℕ → ℝ} {l c : ℝ} (h : is_limit a l) :
   is_limit (λ n, c * (a n)) (c * l) :=
 begin
   by_cases hc : c = 0,
@@ -177,37 +177,119 @@ begin
   ring,
 end
 
-lemma is_limit_mul_eq_zero_of_is_limit_eq_zero (a : ℕ → ℝ) (b : ℕ → ℝ)
+lemma is_limit_add_const_iff (a : ℕ → ℝ) (l c : ℝ) :
+  is_limit a l ↔ is_limit (λ i, a i + c) (l + c) :=
+begin
+  split,
+  { apply is_limit_add_const },
+  { intro h,
+    convert is_limit_add_const (λ n, a n + c) (l + c) (-c) h,
+    { ext, ring },
+    { ring }
+  }
+end
+
+lemma is_limit_iff_is_limit_sub_eq_zero (a : ℕ → ℝ) (l : ℝ) :
+  is_limit a l ↔ is_limit (λ i, a i - l) 0 :=
+begin
+  convert is_limit_add_const_iff a l (-l),
+  { ext, ring },
+  { ring }
+end
+
+lemma is_limit_mul_eq_zero_of_is_limit_eq_zero {a : ℕ → ℝ} {b : ℕ → ℝ}
   (ha : is_limit a 0) (hb : is_limit b 0) : is_limit (a * b) 0 :=
 begin
-  sorry
+  intros ε hε,
+  -- could use √ε for each but much easier to use ε and 1
+  cases ha ε hε with A hA,
+  cases hb 1 (by linarith) with B hB,
+  set N := max A B with hN,
+  use N,
+  intros n hn,
+  have hAN : A ≤ N := le_max_left A B,
+  have hBN : B ≤ N := le_max_right A B,
+  specialize hA n (by linarith),
+  specialize hB n (by linarith),
+  rw [sub_zero] at ⊢ hA hB,
+  rw pi.mul_apply,
+  rw abs_mul,
+  convert mul_lt_mul'' hA hB _ _, simp,
+  all_goals {apply abs_nonneg},
 end
+
 -- The limit of the product is the product of the limits.
 -- If aₙ → l and bₙ → m then aₙ * bₙ → l * m.
-theorem tendsto_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
+theorem it_limit_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
   (h1 : is_limit a l) (h2 : is_limit b m) :
   is_limit (a * b) (l * m) :=
 begin
-
-  sorry
+  suffices : is_limit (λ i, (a i - l) * (b i - m) + (l * (b i - m)) + m * (a i - l)) 0,
+  { rw is_limit_iff_is_limit_sub_eq_zero,
+    convert this,
+    ext,
+    rw pi.mul_apply,
+    ring },
+  have h1 : is_limit (λ i, a i - l) 0,
+  { rwa is_limit_iff_is_limit_sub_eq_zero at h1 },
+  have h2 : is_limit (λ i, b i - m) 0,
+  { rwa is_limit_iff_is_limit_sub_eq_zero at h2 },
+  have h3 : is_limit (λ i, (a i - l) * (b i - m)) 0,
+  { apply is_limit_mul_eq_zero_of_is_limit_eq_zero h1 h2 },
+  have h4 : is_limit (λ i, l * (b i - m)) 0,
+  { convert is_limit_mul_const_left h2,
+    ring },
+  have h5 : is_limit (λ i, m * (a i - l)) 0,
+  { convert is_limit_mul_const_left h1,
+    ring },
+  convert is_limit_add (_ : is_limit _ 0) h5, norm_num,
+  convert is_limit_add h3 h4,
+  norm_num,
 end
--- TODO -- do I use this?
--- We will need an easy reformulation of the limit definition
-lemma tendsto_iff_sub_tendsto_zero {a : ℕ → ℝ} {l : ℝ} :
-  is_limit (λ n, a n - l) 0 ↔ is_limit a l :=
+
+
+lemma is_limit_linear (a : ℕ → ℝ) (b : ℕ → ℝ) (α β c d : ℝ) 
+    (ha : is_limit a α) (hb : is_limit b β) : 
+    is_limit ( λ n, c * (a n) + d * (b n) ) (c * α + d * β) :=
 begin
-  split ; 
-  { intros h ε εpos,
-    rcases h ε εpos with ⟨N, H⟩,
-    use N,
-    intros n hn,
-    simpa using H n hn }
+  apply is_limit_add,
+  { apply is_limit_mul_const_left ha },
+  { apply is_limit_mul_const_left hb },
 end
 
--- TODO -- do I use this?
--- In the definition of a limit, the final ε can be replaced 
--- by a constant multiple of ε. We could assume this constant is positive
--- but we don't want to deal with this when applying the lemma.
+
+
+
+-- not hard
+-- If aₙ → l and bₙ → m, and aₙ ≤ bₙ for all n, then l ≤ m
+theorem tendsto_le_of_le (a : ℕ → ℝ) (b : ℕ → ℝ)
+  (l : ℝ) (m : ℝ) (hl : is_limit a l) (hm : is_limit b m) 
+  (hle : ∀ n, a n ≤ b n) : l ≤ m :=
+begin
+  -- Assume for a contradiction that m < l
+  apply le_of_not_lt,
+  intro hlt,
+  -- Let ε be (l - m) / 2...
+  set ε := (l - m) /2 with hεlm,
+  have hε : 0 < ε := by linarith,
+  cases hl ε hε with Na HNa,
+  -- Choose Nb s.t.  |bₙ - m| < ε for n ≥ Nb
+  cases hm ε hε with Nb HNb,
+  -- let N be the max of Na and Nb...
+  let N := max Na Nb,
+  -- ...and note N ≥ Na and N ≥ Nb,
+  have HNa' : Na ≤ N := le_max_left _ _,
+  have HNb' : Nb ≤ N := le_max_right _ _,
+  -- ... so |a_N - l| < ε and |b_N - m| < ε
+  have Hl' : |a N - l| < ε := HNa N HNa',
+  have Hm' : |b N - m| < ε := HNb N HNb',
+  -- ... and also a_N ≤ b_N.
+  have HN : a N ≤ b N := hle N,
+  rw abs_lt at Hl' Hm',
+  linarith,
+end
+
+-- exercise
 lemma tendsto_of_mul_eps (a : ℕ → ℝ) (l : ℝ) (A : ℝ)
   (h : ∀ ε > 0, ∃ N, ∀ n ≥ N, | a n - l | < A*ε) : is_limit a l :=
 begin
@@ -234,216 +316,82 @@ begin
     tauto }
 end
 
--- TODO -- do we need these?
--- A sequence (aₙ) is *bounded* if there exists some real number B such that |aₙ| ≤ B for all n≥0.
-definition has_bound (a : ℕ → ℝ) (B : ℝ) := ∀ n, |a n| ≤ B
-definition is_bounded (a : ℕ → ℝ) := ∃ B, has_bound a B
+definition is_bounded (a : ℕ → ℝ) := ∃ B, ∀ n, |a n| ≤ B
 
--- TODO -- do we need this?
--- We really have a problem with that |.| notation
--- The following lemma is obvious
-lemma has_bound_const (m : ℝ): has_bound (λ n, m) (|m|)  :=
-assume n, by simp
-
--- TODO -- do we really need this? It's all finsettery
--- A convergent sequence is bounded.
-open finset
-theorem bounded_of_convergent (a : ℕ → ℝ) (Ha : has_limit a) : is_bounded a :=
-begin
-  -- let l be the limit of the sequence.
-  cases Ha with l Hl,
-  -- By definition, there exist some N such that n ≥ N → |aₙ - l| < 1
-  cases Hl 1 (zero_lt_one) with N HN,
-  -- Let X be {|a₀|, |a₁|, ... , |a_N|}...
-  let X := image (abs ∘ a) (range (N + 1)),
-  -- ...let's remark that |a₀| ∈ X so X ≠ ∅ while we're here...
-  have H2 : |a 0| ∈ X := mem_image_of_mem _ (mem_range.2 (nat.zero_lt_succ _)),
-  have H3 : X.nonempty := ⟨_, H2⟩,
-  -- ...and let B₀ be the max of X.
-  let B₀ := max' X H3,
-  -- If n ≤ N then |aₙ| ≤ B₀.
-  have HB₀ : ∀ n ≤ N, |a n| ≤ B₀ := λ n Hn, le_max' X _
-    (mem_image_of_mem _ (mem_range.2 (nat.lt_succ_of_le Hn))),
-  -- So now let B = max {B₀, |l| + 1}
-  let B := max B₀ ( |l| + 1),
-  -- and we claim this bound works, i.e. |aₙ| ≤ B for all n ∈ ℕ.
-  use B,
-  -- Because if n ∈ ℕ,
-  intro n,
-  -- then either n ≤ N or n > N.
-  cases le_or_gt n N with Hle Hgt,
-  { -- if n ≤ N, then |aₙ| ≤ B₀
-    have h : |a n| ≤ B₀ := HB₀ n Hle,
-    -- and B₀ ≤ B 
-    have h2 : B₀ ≤ B := le_max_left _ _,
-    -- so we're done
-    linarith },
-  { -- and if n > N, then |aₙ - l| < 1...
-    have h : |a n - l| < 1 := HN n (le_of_lt Hgt),
-    -- ...so |aₙ| < 1 + |l|...
-    have h2 : |a n| < |l| + 1,
-      -- todo (kmb) -- remove linarith bug workaround
-      revert h,unfold abs,unfold max,split_ifs;intros;linarith {restrict_type := ℝ},
-    -- ...which is ≤ B
-    have h3 : |l| + 1 ≤ B := le_max_right _ _,
-    -- ...so we're done in this case too
-    linarith   
-  }
-end
-
--- TODO -- do we really need this?
--- more convenient theorem: a sequence with a limit
--- is bounded in absolute value by a positive real.
-theorem bounded_pos_of_convergent (a : ℕ → ℝ) (Ha : has_limit a) :
-∃ B : ℝ, B > 0 ∧ has_bound a B :=
-begin
-  -- We know the sequence is bounded. Say it's bounded by B₀.
-  cases bounded_of_convergent a Ha with B₀ HB₀,
-  -- let B = |B₀| + 1; this bound works.
-  let B := |B₀| + 1,
-  use B,
-  -- B is obviously positive 
-  split,
-  { -- (because 1 > 0...
-    apply lt_of_lt_of_le zero_lt_one,
-    show 1 ≤ |B₀| + 1,
-    apply le_add_of_nonneg_left,
-    -- ... and |B₀| ≥ 0)
-    exact abs_nonneg _,
-    use [0, 1], simp,
-  },
-  -- so it suffices to prove B is a bound.
-  -- If n is a natural
-  intro n,
-  -- then |aₙ| ≤ B₀
-  apply le_trans (HB₀ n),
-  -- so it suffices to show B₀ ≤ |B₀| + 1
-  show B₀ ≤ |B₀| + 1,
-  -- which is obvious.
-  apply le_trans (le_abs_self B₀),
-  simp [zero_le_one],
-end
-
-lemma tendsto_bounded_mul_zero {a : ℕ → ℝ} {b : ℕ → ℝ} {A : ℝ} (Apos : A > 0)
-  (hA : has_bound a A) (hB : is_limit b 0) 
+-- nice exercise
+lemma tendsto_bounded_mul_zero {a : ℕ → ℝ} {b : ℕ → ℝ}
+  (hA : is_bounded a) (hB : is_limit b 0) 
   : is_limit (a*b) 0 :=
 begin
-  -- Let's apply our variant of the definition of limits where the final 
-  -- ε gets multiplied by some constant to be determined
-  apply tendsto_of_mul_eps,
-  -- Let ε be any positive number
+  cases hA with A hA,
+  have hAnonneg : 0 ≤ A,
+  { refine le_trans _ (hA 0),
+    apply abs_nonneg,
+  },
+  -- A = 0 is a special case
+  by_cases hA0 : A = 0,
+  { -- if A = 0 then the sequence is 0
+    subst hA0,
+    have hA2 : ∀ n, a n = 0,
+    { intro n,
+      specialize hA n,
+      have h := abs_nonneg (a n),
+      rw ← abs_eq_zero,
+      linarith },
+    convert is_limit_const 0,
+    ext n,
+    rw pi.mul_apply,
+    rw hA2,
+    simp },  
+  have hApos : 0 < A,
+  exact (ne.symm hA0).le_iff_lt.mp hAnonneg, -- thanks `library_search`
   intros ε εpos,
   -- by assumption hB, we get some N such that 
   -- ∀ (n : ℕ), n ≥ N → |b n| < ε
-  cases hB ε εpos with N H,
-  simp at H,
+  cases hB (ε/A) (div_pos εpos hApos) with N hN,
+  simp_rw [sub_zero] at hN,
   -- Let's use that N
   use N,
   -- And compute for any n ≥ N
-  intros n nN,
+  intros n hn,
   calc 
   |(a * b) n - 0| = |a n * b n|    : by simp
               ... = |a n| * |b n|  : abs_mul _ _
               ... ≤ A*|b n|        : mul_le_mul_of_nonneg_right (hA n) (abs_nonneg _)
-              ... < A*ε            : mul_lt_mul_of_pos_left (H n nN) Apos
+              ... < A*(ε/A)        : mul_lt_mul_of_pos_left (hN n hn) hApos
+              ... = ε              : mul_div_cancel' ε hA0
 end
 
 
 
--- The limit of the product is the product of the limits.
--- If aₙ → l and bₙ → m then aₙ * bₙ → l * m.
-theorem tendsto_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
-  (h1 : is_limit a l) (h2 : is_limit b m) :
-  is_limit (a * b) (l * m) :=
+
+-- sandwich
+theorem sandwich (a b c : ℕ → ℝ)
+  (l : ℝ) (ha : is_limit a l) (hc : is_limit c l) 
+  (hab : ∀ n, a n ≤ b n) (hbc : ∀ n, b n ≤ c n) : is_limit b l :=
 begin
-  -- We apply the difference criterion so we need to prove a*b - l*m goes to zero
-  rw ←tendsto_iff_sub_tendsto_zero,
-
-  -- The key idea is to introduce (a_n - l) and (b_n - m) in this difference
-  have key : (λ n, (a*b) n - l*m) = (λ n, (a n)*(b n - m) + m*(a n - l)),
-    simp, ext, ring,
-  rw key,
-  
-  -- By addition of limit, it then suffices to prove a_n * (b_n - m) and m*(a_n - l)
-  -- both go to zero
-  suffices : is_limit (λ n, a n * (b n - m)) 0 ∧ is_limit (λ n, m * (a n - l)) 0,
-  { rw [show (0 : ℝ) = 0 + 0, by simp],
-    exact tendsto_add _ _ _ _ this.left this.right},
-  -- Let's tacke one after the other
-  split,
-  { -- Since a is convergent, it's bounded by some positive A
-    rcases bounded_pos_of_convergent a ⟨l, h1⟩ with ⟨A, A_pos, hA⟩,
-    -- We can reformulate the b convergence assumption as b_n - m goes to zero.
-    have limb : is_limit (λ n, b n - m) 0,
-     from tendsto_iff_sub_tendsto_zero.2 h2,
-    -- So we can conclude using our lemma about product of a bounded sequence and a
-    -- sequence converging to zero
-    exact tendsto_bounded_mul_zero A_pos hA limb },
-  { -- It remains to prove m * (a_n - l) goes to zero
-    -- If m = 0 this is obvious.
-    by_cases Hm : m = 0,
-    { simp [Hm, tendsto_const] },
-    -- Otherwise we follow the same strategy as above.
-    { -- We reformulate our convergence assumption on a as a_n - l goes to zero
-      have lima : is_limit (λ n, a n - l) 0, 
-        from tendsto_iff_sub_tendsto_zero.2 h1,
-      -- and conclude using the same lemma
-      exact tendsto_bounded_mul_zero (abs_pos.2 Hm) (has_bound_const m) lima } }
-end
-
--- If aₙ → l and bₙ → m, and aₙ ≤ bₙ for all n, then l ≤ m
-theorem tendsto_le_of_le (a : ℕ → ℝ) (b : ℕ → ℝ)
-  (l : ℝ) (m : ℝ) (hl : is_limit a l) (hm : is_limit b m) 
-  (hle : ∀ n, a n ≤ b n) : l ≤ m :=
-begin
-  -- Assume for a contradiction that m < l
-  apply le_of_not_lt,
-  intro hlt,
-  -- Let ε be (l - m) / 2...
-  let ε := (l - m) /2,
-  -- ...and note that it's positive
-  have Hε : ε > 0 := show (l - m) / 2 > 0 , by linarith,
-  -- Choose Na s.t.  |aₙ - l| < ε for n ≥ Na
-  cases hl ε Hε with Na HNa,
-  have Hε : ε > 0 := show (l - m) / 2 > 0 , by linarith,
-  -- Choose Nb s.t.  |bₙ - m| < ε for n ≥ Nb
-  cases hm ε Hε with Nb HNb,
-  -- let N be the max of Na and Nb...
-  let N := max Na Nb,
-  -- ...and note N ≥ Na and N ≥ Nb,
-  have HNa' : Na ≤ N := le_max_left _ _,
-  have HNb' : Nb ≤ N := le_max_right _ _,
-  -- ... so |a_N - l| < ε and |b_N - m| < ε
-  have Hl' : |a N - l| < ε := HNa N HNa',
-  have Hm' : |b N - m| < ε := HNb N HNb',
-  -- ... and also a_N ≤ b_N.
-  have HN : a N ≤ b N := hle N,
-  -- This is probably a contradiction.
-  have Hε : ε = (l - m) / 2 := rfl,
-  revert Hl' Hm',
-  unfold abs,unfold max,split_ifs;intros;linarith
-end
-
-
-
-/- Lemma
-If $\lim_{n \to \infty} a_n = \alpha$ and $\lim_{n \to \infty} b_n = \beta$
-and $c$ is a constant, then 
-$\lim_{n \to \infty} ( c * a_n + c * b_n) = c \alpha + c \beta$
--/
-lemma lim_linear (a : ℕ → ℝ) (b : ℕ → ℝ) (α β c d : ℝ) 
-    (ha : is_limit a α) (hb : is_limit b β) : 
-    is_limit ( λ n, c * (a n) + d * (b n) ) (c * α + d * β) :=
-begin
-    apply tendsto_add,
-    exact lim_times_const a α c ha,
-    exact lim_times_const b β d hb,
-    done
+  intros ε hε,
+  cases ha ε hε with A hA,
+  cases hc ε hε with C hC,
+  set N := max A C with hN,
+  use N,
+  intros n hn,
+  rw hN at hn,
+  replace hn := max_le_iff.1 hn,
+  specialize hA n (by linarith),
+  specialize hC n (by linarith),
+  specialize hab n,
+  specialize hbc n,
+  rw abs_lt at *,
+  split;
+  linarith,
 end
 
 
 -- idea
 def is_cauchy (a : ℕ → ℝ) : Prop :=
 ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, |a m - a n| < ε 
+
+-- and off you go
 
 end xena

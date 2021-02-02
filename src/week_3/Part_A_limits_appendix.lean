@@ -15,15 +15,15 @@ begin
   congr',
 end
 
-example (a b : ℕ → ℝ) (l m : ℝ) : is_limit a l → is_limit b m → is_limit (λ n, a n + b n) (l + m) :=
+example (a b : ℕ → ℝ) (l m : ℝ) : is_limit a l → is_limit b m → is_limit (a + b) (l + m) :=
 begin
-  simp only [is_limit_iff_tendsto],
+  repeat {rw is_limit_iff_tendsto},
   exact tendsto.add,
 end
 
-example (a b : ℕ → ℝ) (l m : ℝ) : is_limit a l → is_limit b m → is_limit (λ n, a n * b n) (l * m) :=
+example (a b : ℕ → ℝ) (l m : ℝ) : is_limit a l → is_limit b m → is_limit (a * b) (l * m) :=
 begin
-  simp only [is_limit_iff_tendsto],
+  repeat {rw is_limit_iff_tendsto},
   exact tendsto.mul,
 end
 
