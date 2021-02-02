@@ -1,111 +1,197 @@
+-- need the real numbers
+import data.real.basic
+-- need the tactics
+import tactic
+
 /-
 
 # Limits
 
-Let's develop a theory of limits of sequences a₀, a₁, a₂, … of reals.
-In this file we will develop it the way it is done at university.
+We develop a theory of limits of sequences a₀, a₁, a₂, … of reals,
+following the way is it traditionally done in a first year undergraduate
+mathematics course.
 
--/
-
-/- limits.lean
-
-Limits of sequences.
-
-Part of the M1P1 Lean project.
+## Overview of the file
 
 This file contains the basic definition of the limit of a sequence, and
 proves basic properties about it.
 
-It is full of comments in an attempt to make it more comprehensible to
-mathematicians with little Lean experience, although by far the best
-way to understand what is going on is to open the file within Lean 3.4.2
-so you can check out the goal at each line -- this really helps understanding.
+The `data.real.basic` import imports the definition and basic
+properties of the real numbers, including, for example, 
+the absolute value function `abs : ℝ → ℝ`, and the proof
+that `ℝ` is a complete totally ordered archimedean field.
+To get `ℝ` in Lean, type `\R`.
+
+TODO : do we mention norm_num, ring or linarith?
+
+TODO: main theorems
+
 -/
 
--- The import below gives us a working copy of the real numbers ℝ,
--- and functions such as abs : ℝ → ℝ 
-import data.real.basic
 
--- This import has addition of functions, which we need for sums of limits.
--- import algebra.pi_instances
-
--- This next import gives us several tactics of use to mathematicians:
--- (1) norm_num [to prove basic facts about reals like 2+2 = 4]
--- (2) ring [to prove basic algebra identities like (a+b)^2 = a^2+2ab+b^2]
--- (3) linarith [to prove basic inequalities like x > 0 -> x/2 > 0]
-import tactic.linarith
-
---import topology.basic
--- Ken Lee wanted to import this
---import analysis.exponential
-
--- These lines switch Lean into "maths proof mode" -- don't worry about them.
--- Basically they tell Lean to use the axiom of choice and the
--- law of the excluded middle, two standard maths facts which we
--- assume all the time in maths, usually without comment. 
-
--- This imports Patrick's extension obv_ineq of linarith which solves
--- "obvious inequalities", and maybe other things too.
-import tactic.linarith data.real.basic
-
-local notation `|` x `|` := abs x
-
-lemma zero_of_abs_lt_all (x : ℝ) (h : ∀ ε > 0, |x| < ε) : x = 0 :=
-begin
-  rw ← abs_eq_zero,
-  apply eq_of_le_of_forall_le_of_dense (abs_nonneg x),
-  intros ε ε_pos,
-  exact le_of_lt (h ε ε_pos),
-end
-
--- -- The next few things should be hidden
--- @[user_attribute]
--- meta def ineq_rules : user_attribute :=
--- { name := `ineq_rules,
---   descr := "lemmas usable to prove inequalities" }
-
--- attribute [ineq_rules] add_lt_add le_max_left le_max_right
-
--- meta def obvious_ineq := `[linarith <|> apply_rules ineq_rules]
--- run_cmd add_interactive [`obvious_ineq]
--- -- end of scary things
-
-
---noncomputable theory
---local attribute [instance, priority 0] classical.prop_decidable
-
--- Let's also put things into an M1P1 namespace so we can define
--- stuff which is already defined in mathlib without breaking anything.
 namespace xena
 
 -- the maths starts here.
 
 -- We introduce the usual mathematical notation for absolute value
-notation `|` x `|` := abs x
+local notation `|` x `|` := abs x
+
+
 
 -- We model a sequence a₀, a₁, a₂,... of real numbers as a function
 -- from ℕ := {0,1,2,...} to ℝ, sending n to aₙ . So in the below
 -- definition of the limit of a sequence, a : ℕ → ℝ is the sequence.
 
--- We first formalise the definition of "aₙ → l as n → ∞"
+/-- `l` is the limit of the sequence `a` of reals -/
 definition is_limit (a : ℕ → ℝ) (l : ℝ) : Prop :=
 ∀ ε > 0, ∃ N, ∀ n ≥ N, | a n - l | < ε
 
+-- Note that `is_limit` is not a *function* (ℕ → ℝ) → ℝ! It is
+-- a _binary relation_ on (ℕ → ℝ) and ℝ. The two problems
+-- are: (1) some sequences (like 0, 1, 0, 1, 0, 1,…) don't have
+-- a limit at all, and (2) at this point in the development, some
+-- sequences might in theory have more than one limit (and if we were working
+-- with a non-Hausdorff topological space rather than `ℝ` this could of course
+-- actually happen, although we will see below that it can't happen here).
+
+-- TODO -- shoudl I delete this?
 -- A sequence converges if and only if it has a limit. The difference
 -- with this definition is that we don't specify the limit, we just
 -- claim that it exists.
 definition has_limit (a : ℕ → ℝ) : Prop := ∃ l : ℝ, is_limit a l
 
-lemma tendsto_const (a : ℝ) : is_limit (λ n, a) a :=
+-- THIS IS FOR THE FINAL VERSION
+-- warmup : constant sequence with value a tends to a
+lemma is_limit_const (a : ℝ) : is_limit (λ n, a) a :=
 begin
   intros ε εpos,
-  use 0,
+  use 37,
   intros n _,
   simpa using εpos
 end
 
-local attribute [simp] sub_zero
+/-
+API for `max`: le_max_left, le_max_right
 
+API for `abs`: abs_add and abs_lt
+-/
+-- THIS IS FOR THE FINAL VERSION
+-- this needs commenting
+theorem is_limit_subsingleton (a : ℕ → ℝ) (l m : ℝ) (hl : is_limit a l)
+(hm : is_limit a m) : l = m :=
+begin
+  by_contra h,
+  -- TODO : next three lines need to be taught
+  wlog : l < m,
+  have := lt_trichotomy l m,
+    tauto,
+  set ε := m - l with hε,
+  cases hl (ε/2) (by linarith) with L hL,
+  cases hm (ε/2) (by linarith) with M hM,
+  set N := max L M with hN,
+  have hLN : L ≤ N := le_max_left L M,
+  have hMN : M ≤ N := le_max_right L M,
+  specialize hL N hLN,
+  specialize hM N hMN,
+  rw abs_lt at hL hM,
+  linarith,
+end
+
+-- THIS IS FOR THE FINAL VERSION
+-- comment on what a + b means
+
+-- We now prove that if aₙ → l and bₙ → m then aₙ + bₙ → l + m.
+-- Maths proof: choose M₁ large enough so that n ≥ M₁ implies |aₙ - l|<ε/2
+-- Maths proof: choose M₂ large enough so that n ≥ M₂ implies |bₙ - m|<ε/2
+-- Now N := max M₁ M₂ works
+theorem is_limit_add (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
+  (h1 : is_limit a l) (h2 : is_limit b m) :
+  is_limit (a + b) (l + m) :=
+begin
+  -- let epsilon be a positive real
+  intros ε Hε,
+  -- Choose large L such that n ≥ L implies |a n - l| < ε
+  cases (h1 (ε/2) (by linarith)) with L HL,
+  -- similarly choose M for the b sequence. 
+  cases (h2 (ε/2) (by linarith)) with M HM,
+  -- let N be the max of M1 and M2
+  set N := max L M with hN,
+  -- and let's use that 
+  use N,
+  -- Of course N ≥ L and N ≥ M
+  have HLN : N ≥ L := le_max_left _ _,
+  have HMN : N ≥ M := le_max_right _ _,
+  -- Now say n ≥ N.
+  intros n Hn,
+  -- Then obviously n ≥ L...
+  have HnL : n ≥ L := by linarith,
+  -- ...so |aₙ - l| < ε/2
+  have H3 : |a n - l| < ε/2 := HL n HnL,
+  -- and similarly n ≥ M, so |bₙ - l| < ε/2
+  have H4 : |b n - m| < ε/2 := HM n (by linarith),
+  -- And now we can show (|aₙ + bₙ - (l + m)| < ε), finishing the proof. 
+                               -- First do some obvious algebra
+  calc |(a + b) n - (l + m)| = |a n + b n - (l + m)| : rfl
+  ...                        = |(a n - l) + (b n - m)| : by ring
+                               -- now use the triangle inequality
+  ...                        ≤ |(a n - l)| + |(b n - m)| : abs_add _ _
+                               -- and our assumptions
+  ...                        < ε/2 + ε/2 : by linarith 
+                               -- and a bit more algebra
+  ...                        = ε : by ring
+end
+
+-- this needs to be in because it's my proof for is_limit_mul
+lemma is_limit_mul_const (a : ℕ → ℝ) (l c : ℝ) (h : is_limit a l) :
+  is_limit (λ n, c * (a n)) (c * l) :=
+begin
+  by_cases hc : c = 0,
+  { subst hc,
+    convert is_limit_const 0,
+    { ext, simp },
+    { simp } },
+  { have hc' : 0 < |c| := by simp [hc],
+    intros ε hε,
+    have hεc : 0 < ε / |c| := div_pos hε hc',
+    specialize h (ε/|c|) hεc,
+    cases h with N hN,
+    use N,
+    intros n hn,
+    specialize hN n hn,
+    dsimp only,
+    rw [← mul_sub, abs_mul],
+    rw ← lt_div_iff' hc',
+    exact hN }
+end
+
+lemma is_limit_add_const (a : ℕ → ℝ) (l c : ℝ) (ha : is_limit a l) :
+  is_limit (λ i, a i + c) (l + c) :=
+begin
+  intros ε hε,
+  -- goal now contains an evaluated lambda
+  dsimp,
+  cases ha ε hε with N hN,
+  use N,
+  intros n hn,
+  convert hN n hn using 2,
+  ring,
+end
+
+lemma is_limit_mul_eq_zero_of_is_limit_eq_zero (a : ℕ → ℝ) (b : ℕ → ℝ)
+  (ha : is_limit a 0) (hb : is_limit b 0) : is_limit (a * b) 0 :=
+begin
+  sorry
+end
+-- The limit of the product is the product of the limits.
+-- If aₙ → l and bₙ → m then aₙ * bₙ → l * m.
+theorem tendsto_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
+  (h1 : is_limit a l) (h2 : is_limit b m) :
+  is_limit (a * b) (l * m) :=
+begin
+
+  sorry
+end
+-- TODO -- do I use this?
 -- We will need an easy reformulation of the limit definition
 lemma tendsto_iff_sub_tendsto_zero {a : ℕ → ℝ} {l : ℝ} :
   is_limit (λ n, a n - l) 0 ↔ is_limit a l :=
@@ -118,6 +204,7 @@ begin
     simpa using H n hn }
 end
 
+-- TODO -- do I use this?
 -- In the definition of a limit, the final ε can be replaced 
 -- by a constant multiple of ε. We could assume this constant is positive
 -- but we don't want to deal with this when applying the lemma.
@@ -147,90 +234,18 @@ begin
     tauto }
 end
 
--- We now start on the proof of the theorem that if a sequence has
--- two limits, they are equal. 
-
--- We're ready to prove the theorem.
-theorem limits_are_unique (a : ℕ → ℝ) (l m : ℝ) (hl : is_limit a l)
-(hm : is_limit a m) : l = m :=
-begin
-  -- Let prove |l - m| is smaller than any positive number, since that will easily imply l = m
-  suffices : ∀ ε : ℝ, ε > 0 → |l - m| < ε,
-    from eq_of_sub_eq_zero (zero_of_abs_lt_all _ this),
-  -- Let ε be any positive number, and let's prove |l - m| < ε
-  intros ε ε_pos,
-  -- Because aₙ → l, there exists Nₗ such that n ≥ Nₗ → |aₙ - l| < ε/2
-  cases hl (ε/2) (by linarith) with Nₗ Hₗ,
-  -- Because aₙ → m, there exists Nₘ such that n ≥ Nₘ → |aₙ - m| < ε/2
-  cases hm (ε/2) (by linarith) with Nₘ Hₘ,
-  -- The trick is to let N be the max of Nₗ and Nₘ
-  let N := max Nₗ Nₘ,
-  -- Now clearly N ≥ Nₗ...
-  have H₁ : Nₗ ≤ N := le_max_left _ _,
-  -- ... so |a_N - l| < ε/2
-  have H : | a N - l| < ε/2 := Hₗ N H₁,
-  -- similarly N ≥ Nₘ...
-  have H₂ : Nₘ ≤ N := le_max_right _ _,
-  -- ... so |a_N - m| < ε/2 too
-  have H' : | a N - m| < ε/2 := Hₘ N H₂,
-  -- We now combine
-  calc 
-    |l - m| = |(l - a N) + (a N - m)| : by ring
-        ... ≤ |l - a N| + |a N - m|   : abs_add _ _
-        ... = |a N - l | + |a N - m|  : by rw abs_sub
-        ... < ε/2 + ε/2               : by linarith
-        ... = ε                       : by ring,
-end
-
--- We now prove that if aₙ → l and bₙ → m then aₙ + bₙ → l + m.
-theorem tendsto_add (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
-  (h1 : is_limit a l) (h2 : is_limit b m) :
-  is_limit (a + b) (l + m) :=
-begin
-  apply tendsto_of_mul_eps,
-  -- let epsilon be a positive real
-  intros ε Hε,
-  -- Choose large M₁ such that n ≥ M₁ implies |a n - l| < ε
-  cases (h1 ε Hε) with M₁ HM₁,
-  -- similarly choose M₂ for the b sequence. 
-  cases (h2 ε Hε) with M₂ HM₂,
-  -- let N be the max of M1 and M2
-  let N := max M₁ M₂,
-  -- and let's use that 
-  use N,
-  -- Of course N ≥ M₁ and N ≥ M₂
-  have H₁ : N ≥ M₁ := le_max_left _ _,
-  have H₂ : N ≥ M₂ := le_max_right _ _,
-  -- Now say n ≥ N.
-  intros n Hn,
-  -- Then obviously n ≥ M₁...
-  have Hn₁ : n ≥ M₁ := by linarith,
-  -- ...so |aₙ - l| < ε
-  have H3 : |a n - l| < ε := HM₁ n Hn₁,
-  -- and similarly n ≥ M₂, so |bₙ - l| < ε
-  have H4 : |b n - m| < ε := HM₂ n (by linarith),
-  -- And now we can estimate (|aₙ + bₙ - (l + m)| < 2ε) 
-                               -- First do some obvious algebra
-  calc |(a + b) n - (l + m)| = |a n + b n - (l + m)| : rfl
-  ...                        = |(a n - l) + (b n - m)| : by congr' 1; ring
-                               -- now use the triangle inequality
-  ...                        ≤ |(a n - l)| + |(b n - m)| : abs_add _ _
-                               -- and our assumptions
-  ...                        < ε + ε : by linarith 
-                               -- and a bit more algebra
-  ...                        = 2*ε : by ring
-end
-
+-- TODO -- do we need these?
 -- A sequence (aₙ) is *bounded* if there exists some real number B such that |aₙ| ≤ B for all n≥0.
-
 definition has_bound (a : ℕ → ℝ) (B : ℝ) := ∀ n, |a n| ≤ B
 definition is_bounded (a : ℕ → ℝ) := ∃ B, has_bound a B
 
+-- TODO -- do we need this?
 -- We really have a problem with that |.| notation
 -- The following lemma is obvious
-lemma has_bound_const (m : ℝ): has_bound (λ n, m) $ |m|  :=
+lemma has_bound_const (m : ℝ): has_bound (λ n, m) (|m|)  :=
 assume n, by simp
 
+-- TODO -- do we really need this? It's all finsettery
 -- A convergent sequence is bounded.
 open finset
 theorem bounded_of_convergent (a : ℕ → ℝ) (Ha : has_limit a) : is_bounded a :=
@@ -276,6 +291,7 @@ begin
   }
 end
 
+-- TODO -- do we really need this?
 -- more convenient theorem: a sequence with a limit
 -- is bounded in absolute value by a positive real.
 theorem bounded_pos_of_convergent (a : ℕ → ℝ) (Ha : has_limit a) :
@@ -408,27 +424,7 @@ begin
   unfold abs,unfold max,split_ifs;intros;linarith
 end
 
-lemma lim_times_const (a : ℕ → ℝ) (l c : ℝ) (h : is_limit a l) :
-  is_limit (λ n, c * (a n)) (c * l) :=
-begin
-  by_cases hc : c = 0,
-  { subst hc,
-    convert tendsto_const 0,
-    { ext, simp },
-    { simp } },
-  { have hc' : 0 < |c| := by simp [hc],
-    intros ε hε,
-    have hεc : 0 < ε / |c| := div_pos hε hc',
-    specialize h (ε/|c|) hεc,
-    cases h with N hN,
-    use N,
-    intros n hn,
-    specialize hN n hn,
-    dsimp only,
-    rw [← mul_sub, abs_mul],
-    rw ← lt_div_iff' hc',
-    exact hN }
-end
+
 
 /- Lemma
 If $\lim_{n \to \infty} a_n = \alpha$ and $\lim_{n \to \infty} b_n = \beta$
@@ -444,5 +440,10 @@ begin
     exact lim_times_const b β d hb,
     done
 end
+
+
+-- idea
+def is_cauchy (a : ℕ → ℝ) : Prop :=
+∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, |a m - a n| < ε 
 
 end xena
