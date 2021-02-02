@@ -22,9 +22,30 @@ the absolute value function `abs : ℝ → ℝ`, and the proof
 that `ℝ` is a complete totally ordered archimedean field.
 To get `ℝ` in Lean, type `\R`.
 
-TODO : do we mention norm_num, ring or linarith?
+We define the predicate `is_limit (a : ℕ → ℝ) (l : ℝ)` to mean that `aₙ → l`
+in the usual way. We then develop the basic theory of limits.
 
-TODO: main theorems
+## Main theorems
+
+* `lemma is_limit_const (a : ℝ) : is_limit (λ n, a) a`
+* `theorem is_limit_subsingleton {a : ℕ → ℝ} {l m : ℝ}
+     (hl : is_limit a l) (hm : is_limit a m) : l = m`
+
+## What to teach?
+
+squiggly brackets
+
+`convert`
+`ring`
+`linarith`
+`norm_num`
+
+/-
+API for `max`: le_max_left, le_max_right
+
+API for `abs`: abs_add and abs_lt
+-/
+
 
 -/
 
@@ -36,8 +57,6 @@ namespace xena
 -- We introduce the usual mathematical notation for absolute value
 local notation `|` x `|` := abs x
 
-
-
 -- We model a sequence a₀, a₁, a₂,... of real numbers as a function
 -- from ℕ := {0,1,2,...} to ℝ, sending n to aₙ . So in the below
 -- definition of the limit of a sequence, a : ℕ → ℝ is the sequence.
@@ -46,37 +65,130 @@ local notation `|` x `|` := abs x
 definition is_limit (a : ℕ → ℝ) (l : ℝ) : Prop :=
 ∀ ε > 0, ∃ N, ∀ n ≥ N, | a n - l | < ε
 
--- Note that `is_limit` is not a *function* (ℕ → ℝ) → ℝ! It is
--- a _binary relation_ on (ℕ → ℝ) and ℝ. The two problems
--- are: (1) some sequences (like 0, 1, 0, 1, 0, 1,…) don't have
--- a limit at all, and (2) at this point in the development, some
--- sequences might in theory have more than one limit (and if we were working
--- with a non-Hausdorff topological space rather than `ℝ` this could of course
--- actually happen, although we will see below that it can't happen here).
+/-
+Note that `is_limit` is not a *function* (ℕ → ℝ) → ℝ! It is
+a _binary relation_ on (ℕ → ℝ) and ℝ, i.e. it's a function which
+takes as input a sequence and a candidate limit, and returns the
+true-false statement saying that the sequence converges to the limit.
 
--- TODO -- shoudl I delete this?
--- A sequence converges if and only if it has a limit. The difference
--- with this definition is that we don't specify the limit, we just
--- claim that it exists.
-definition has_limit (a : ℕ → ℝ) : Prop := ∃ l : ℝ, is_limit a l
+The reason we can't use a "limit" function, which takes in a sequence
+and returns its limit, is twofold:
+(1) some sequences (like 0, 1, 0, 1, 0, 1,…) don't have
+a limit at all, and
+(2) at this point in the development, some sequences might in theory have more
+than one limit (and if we were working with a non-Hausdorff topological space
+rather than `ℝ` this could of course actually happen, although we will see
+below that it can't happen here).
+-/
 
--- THIS IS FOR THE FINAL VERSION
--- warmup : constant sequence with value a tends to a
-lemma is_limit_const (a : ℝ) : is_limit (λ n, a) a :=
+/-
+Let's start with a warmup : the constant sequence with value c tends to c.
+Before we start though, I need to talk about this weird `λ` notation
+which functional programmers use.
+
+### λ notation for functions
+
+This is a lot less scary than it looks. The notation `λ n, f n`
+in Lean just means what we mathematicians would call `f` or `f(x)`.
+Literally, it means "the function sending `n` to `f n`, with this
+added twist that we don't need to write the brackets (although `λ n, f(n)`
+would also work fine). Another way of rewriting it in a more familiar
+manner: `λ n, f n` is the function `n ↦ f n`. So, for example, `λ n, 2 * n`
+is just the function `f(x)=2*x`. It's sometimes called "anonymous function notation"
+because we do not need to introduce a name for the function if we use
+lambda notation.
+
+So you need to know a trick here. What happens if we have such a
+function defined by lambda notation, and then we actually try to
+evaluate it! You have to know how to change `(λ n, f n) (37)`
+into `f(37)` (or, as Lean would call it, `f 37`). Computer scientists
+call this transformation "beta reduction". In Lean, beta reduction is true
+definitionally, so if you are using `apply` or `intro` or other
+tactics which work up to definitional equality then you might not
+even have to change it at all. But if your goal contains an "evaluated λ"
+like `⊢ (λ n, f n) 37` and you have a hypothesis `h1 : f 37 = 100` then
+`rw h1` will fail, because `rw` is pickier and only worked up to syntactic
+equality. So you need to know the trick to change this goal to `f 37`,
+which is the tactic `dsimp only`. It works on hypotheses too -- `dsimp only at h`
+will remove an evaluated `λ` from hypothesis `h`. 
+
+We will now prove that the limit of a constant sequence `aₙ = c` is `c`.
+The definition of the constant sequence is `λ n, c`, the function sending
+every `n` to `c`. I have given you the proof. Step through it by moving your
+cursor through it line by line and watch the tactic state changing.
+
+-/
+
+/-- The limit of a constant sequence is the constant. -/
+lemma is_limit_const (c : ℝ) : is_limit (λ n, c) c :=
 begin
+  -- is_limit a l is *by definition* "∀ ε, ε > 0 → ..." so we
+  -- can just start with `intros`.
   intros ε εpos,
+  -- we need to come up with some N such that n ≥ N implies |c - c| < ε.
+  -- We have some flexibility here :-)
   use 37,
-  intros n _,
-  simpa using εpos
+  -- Now assume n is a natural which is at least 37, but we may as
+  -- well just forget the fact that n ≥ 37 because we're not going to use it.
+  rintro n -,
+  -- Now we have an "unreduced lambda term" in the goal, so let's
+  -- beta reduce it.
+  dsimp only,
+  -- the simplifier is bound to know that `c - c = 0`
+  simp,
+  -- finally, `a > b` is *definitionally* `b < a`, and the `exact`
+  -- tactic works up to definitional equality.
+  exact εpos,
 end
 
 /-
-API for `max`: le_max_left, le_max_right
 
-API for `abs`: abs_add and abs_lt
+I am going to walk you through the next proof as well. It's a proof
+that if `aₙ → l` and `aₙ → m` then `l = m`. Here is how it is stated
+in Lean:
+
+```
+theorem is_limit_subsingleton {a : ℕ → ℝ} {l m : ℝ} (hl : is_limit a l)
+(hm : is_limit a m) : l = m := ...
+```
+
+Before we go through this proof, I think it's time I explained these
+squiggly brackets properly. How come I've written `{a : ℕ → ℝ}`
+and not `(a : ℕ → ℝ)`?
+
+### Squiggly brackets {} in function inputs, and dependent functions.
+
+`is_limit_subsingleton` is a proof that a sequence can have at most one limit.
+It is also a function. Remember that in Lean's dependent type theory, 
+we have types and terms, and every term has a unique type. Types and terms
+are used to unify two completely different things: sets and elements,
+and theorems and proofs. Let's take a close look at what exactly this
+function `is_limit_subsingleton` does.
+
+`is_limit_subsingleton` is a function with five inputs. The first input
+is a sequence `a : ℕ → ℝ`. The second and third are real numbers `l` and `m`.
+The fourth is a proof that `a(n)` tends to `l`, and the fifth is a proof that
+`a(n)` tends to `m`. The output of the function is a proof that `l = m`. This
+is how Lean thinks about proofs internally, and it's important that you
+internalise this point of view because you will be evaluating functions
+quite a bit today. If you still think it's a bit weird having proofs as inputs
+and outputs to functions, just think of a true-false statement (e.g. a theorem
+statement) as being a set, and the elements of that set are the proofs of
+the theorem. For example `2 + 2 = 5` is a set with no elements, because
+there are no proofs of this theorem (assuming that mathematics is consistent).
+
+Now if you think about these inputs carefully, you may realised that something
+a bit fishy is going on here. Usually you would think of a function with five inputs
+as a function from `A × B × C × D × E` to `X`, where `A`, `B`, `C`, `D` and `E`
+are all sets. But the fourth input to `is_limit_singleton` is an element
+of the set of proofs of `is_limit a l`, the statement that `a(n)` tends to `l`,
+and in particular this set itself *depends on the first three inputs*. 
+The set `D` itself is a function of `A`, `B` and `C`! The same is true
+for the set `E`. This slightly bizarre set-up has the even more bizarre
+consequence that actually, 
+
+
 -/
--- THIS IS FOR THE FINAL VERSION
--- this needs commenting
 theorem is_limit_subsingleton {a : ℕ → ℝ} {l m : ℝ} (hl : is_limit a l)
 (hm : is_limit a m) : l = m :=
 begin
