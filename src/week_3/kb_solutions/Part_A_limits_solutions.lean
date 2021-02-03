@@ -31,25 +31,14 @@ We then develop the basic theory of limits.
 
 ## Main theorems
 
-* `lemma is_limit_const (a : ℝ) : is_limit (λ n, a) a`
-* `theorem is_limit_subsingleton {a : ℕ → ℝ} {l m : ℝ}
-     (hl : is_limit a l) (hm : is_limit a m) : l = m`
-
-## What to teach?
-
-squiggly brackets
-
-`convert`
-`ring`
-`linarith`
-`norm_num`
-
-/-
-API for `max`: le_max_left, le_max_right
-
-API for `abs`: abs_add and abs_lt
--/
-
+variables (a b c : ℕ → ℝ) (c l m : ℝ)
+* `is_limit_const : is_limit (λ n, c) c`
+* `is_limit_subsingleton (hl : is_limit a l) (hm : is_limit a m) : l = m`
+* `is_limit_add (h1 : is_limit a l) (h2 : is_limit b m) : is_limit (a + b) (l + m)`
+* `is_limit_mul (h1 : is_limit a l) (h2 : is_limit b m) : is_limit (a * b) (l * m)`
+* `is_limit_le_of_le (hl : is_limit a l) (hm : is_limit b m) (hle : ∀ n, a n ≤ b n) : l ≤ m`
+* `sandwich (ha : is_limit a l) (hc : is_limit c l) 
+    (hab : ∀ n, a n ≤ b n) (hbc : ∀ n, b n ≤ c n) : is_limit b l`
 
 -/
 
@@ -610,7 +599,7 @@ end
 -- `suffices : is_limit (λ i, (a i - l) * (b i - m) + (l * (b i - m)) + m * (a i - l)) 0,`
 -- (note: this multiplies out to `a i * b i - l * m`)
 -- and then prove that all three terms in the sum tend to zero.
-theorem it_limit_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
+theorem is_limit_mul (a : ℕ → ℝ) (b : ℕ → ℝ) (l m : ℝ)
   (h1 : is_limit a l) (h2 : is_limit b m) :
   is_limit (a * b) (l * m) :=
 begin
@@ -639,7 +628,7 @@ end
 
 
 -- If aₙ → l and bₙ → m, and aₙ ≤ bₙ for all n, then l ≤ m
-theorem tendsto_le_of_le (a : ℕ → ℝ) (b : ℕ → ℝ)
+theorem is_limit_le_of_le (a : ℕ → ℝ) (b : ℕ → ℝ)
   (l : ℝ) (m : ℝ) (hl : is_limit a l) (hm : is_limit b m) 
   (hle : ∀ n, a n ≤ b n) : l ≤ m :=
 begin
