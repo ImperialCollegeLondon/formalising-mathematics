@@ -1,4 +1,4 @@
-import week_3.kb_solutions.Part_A_limits_solutions
+import week_3.Part_A_limits
 
 import topology.instances.real
 
