@@ -16,14 +16,14 @@ begin
   congr',
 end
 
--- this is `tendsto.add`
+-- this is `is_limit_add`
 example (a b : ℕ → ℝ) (l m : ℝ) : is_limit a l → is_limit b m → is_limit (a + b) (l + m) :=
 begin
   repeat {rw is_limit_iff_tendsto},
   exact tendsto.add,
 end
 
--- this is `tendsto.mul`
+-- this is `is_limit_mul`
 example (a b : ℕ → ℝ) (l m : ℝ) : is_limit a l → is_limit b m → is_limit (a * b) (l * m) :=
 begin
   repeat {rw is_limit_iff_tendsto},
