@@ -303,6 +303,52 @@ end
 
 /-
 
+Two quick comments on some other new things in the above proof: 
+
+1) We will be using `max` a lot in this workshop. `max A B` is
+the max of `A` and `B`. `max` is a definition, not a theorem, so 
+that means that there will be an API associated with it, i.e. 
+a list of little theorems which make `max` possible to use.
+We just saw the two important theorems which we'll be using:
+`le_max_left A B : A ≤ max A B` and
+`le_max-right A B : B ≤ max A B`.
+
+There are other cool functions in the `max` API, for example
+`max_le : A ≤ C → B ≤ C → max A B ≤ C`. The easiest way to 
+find your way around the `max` API is to *guess* what the names
+of the theorems are! For example what do you think 
+`max A B < C ↔ A < C ∧ B < C` is called?
+If you can't work it out, then cheat by running
+
+```
+example (A B C : ℝ) : max A B < C ↔ A < C ∧ B < C :=
+begin
+  library_search
+end
+```
+
+2) `specialize` is a tactic which changes a function by fixing once and
+for all the first inputs. For example, say `f : A → B → C → D` is a function.
+Because `→` is right associative in Lean, `f` is a function which wants
+an input from `A`, and then spits out a function which wants an input
+from `B`, and spits out a function which wants an input from `C` and
+spits out an element of `D`. So really it's just a function which takes
+three inputs, one from `A`, one from `B` and one from `C`, and spits
+out something in `D`. This is what computer scientists call "currying".
+
+Now say I have `a : A` and I want this to be my first input to `f`, and I never
+want to run `f` again with any other inputs from `A`. Then 
+
+`specialize f a`
+
+will feed `a` into `f` and then rename `f` to be the resulting new
+function `B → C → D`.
+-/
+
+-- Before we go on, I need to explain two more high-powered tactics.
+
+/-
+
 ## `linarith` and `ring`
 
 `linarith` and `ring` are two high-powered tactics. It's important
