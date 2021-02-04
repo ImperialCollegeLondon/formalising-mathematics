@@ -344,7 +344,7 @@ want to run `f` again with any other inputs from `A`. Then
 will feed `a` into `f` and then rename `f` to be the resulting new
 function `B → C → D`.
 -/
-X → Y → Z
+
 -- Before we go on, I need to explain two more high-powered tactics.
 
 /-
@@ -507,7 +507,7 @@ theorem is_limit_add {a b : ℕ → ℝ} {l m : ℝ}
 begin
   sorry,
 end
-#check lt_div_iff 
+
 -- We have proved `is_limit` behaves well under `+`. If we also
 -- prove that it behaves well under scalar multiplication, we can
 -- deduce that it's linear. So let's do this next.
