@@ -159,49 +159,70 @@ Then given a cover `U : ι → set X`, define
 
 `let V : option ι → set X := λ x, option.rec Cᶜ U x,`
 
+For finiteness, if you have `F : set (option ι)` and `hF : F.finite`,
+and you want `(some ⁻¹' F).finite`, then you can apply
+`set.finite.preimage` and use `option.some_inj` to deal with the
+injectivity.
 -/
 lemma closed_of_compact (S : set X) (hS : is_compact S)
   (C : set X) (hC : is_closed C) : is_compact (S ∩ C) :=
 begin
   rw compact_iff_finite_subcover' at hS ⊢,
+  -- take a cover of S ∩ C by a family U of opens indexed by ι
   intros ι U hUopen hSCcover,
+  -- Now let's define a family V of opens by V = U plus 
+  -- one extra set, Cᶜ. This family is indexed by `option ι`.
   let V : option ι → set X := λ x, option.rec Cᶜ U x,
+  -- I claim that V is an open cover of the compact set S.
   specialize hS V _, swap,
-  { intros i,
+  { -- First let's check that V i is always open
+    intros i,
+    -- two cases
     cases i with i,
-    { change is_open Cᶜ,
+    { -- Cᶜ is open 
+      change is_open Cᶜ,
       rwa is_open_compl_iff },
-    { change is_open (U i),
+    { -- U i are open
+      change is_open (U i),
       apply hUopen } },
   specialize hS _, swap,
-  { intro x,
+  { -- Now I claim they cover S
+    intro x,
     intro hxS,
+    -- if x ∈ S then it's either in C
     by_cases hxC : x ∈ C,
-    { rw subset_def at hSCcover,
+    { -- so it's hit by some U i
+      rw subset_def at hSCcover,
       specialize hSCcover x ⟨hxS, hxC⟩,
       rw mem_Union at ⊢ hSCcover,
       cases hSCcover with i hi,
       use (some i),
       exact hi },
-    { rw mem_Union,
+    { -- or it's not
+      rw mem_Union,
+      -- in which case it's in Cᶜ
       use none } },
+  -- So the V's have a finite subcover.
   rcases hS with ⟨F, hFfinite, hFcover⟩,
+  -- I claim that those V's which are U's are a finite subcover of S ∩ C
   use (some : ι → option ι) ⁻¹' F,
   split,
-  { -- hard
+  { -- This cover is finite
     apply finite.preimage _ hFfinite,
     intros i hi j hj,
     exact option.some_inj.mp },
+  -- and if x ∈ S ∩ C,
   rintros x ⟨hxS, hxC⟩,
   rw subset_def at hFcover,
   specialize hFcover x hxS,
+  -- then it's in S
   rw mem_bUnion_iff at hFcover ⊢,
+  -- so it's covered by the V's
   rcases hFcover with ⟨i, hiF, hxi⟩,
+  -- and it's not in Cᶜ
   cases i with i,
-  { exfalso, 
-    contradiction },
-  use i,
-  use hiF,
-  exact hxi,
+  { contradiction },
+  -- so it's in one of the U's.
+  { use [i, hiF, hxi] },
 end
 
