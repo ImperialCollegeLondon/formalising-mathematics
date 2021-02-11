@@ -24,7 +24,7 @@ a closed subset, then `S ∩ C` is a compact subset.
 The original results are just the special case where `S` is `univ : set X`.
 -/
 
--- Let X and Y by topological spaces, and let `f : X → Y` be a map.
+-- Let X and Y be topological spaces, and let `f : X → Y` be a map.
 variables (X Y : Type) [topological_space X] [topological_space Y] (f : X → Y)
 
 -- I don't want to be typing `set.this` and `set.that` so let's open
@@ -45,8 +45,9 @@ mathlib's version of this, `compact_iff_finite_subcover`, uses a slightly
 wacky notion of finite subcover involving `finset X`, the type of finite
 subsets of `X` (a completely different type to the type `set X`!).
 We prove an easier-to-use version involving `finite Z`, the predicate
-saying that `Z : set ι` is finite. You can ignore this.
+saying that `Z : set ι` is finite. You can ignore this proof.
 -/
+
 lemma compact_iff_finite_subcover'
   {α : Type} [topological_space α] {S : set α} :
   is_compact S ↔ (∀ {ι : Type} (U : ι → (set α)), (∀ i, is_open (U i)) →
@@ -83,23 +84,86 @@ of `f '' S` by the `U i` with `i ∈ F` is a finite subcover.
 
 Good luck! Please ask questions (or DM me on discord if you don't want to 
 ask publically). Also feel free to DM me if you manage to do it!
+
+Useful theorems:
+
+`continuous.is_open_preimage` -- preimage of an open set under a
+continuous map is open.
+
+`is_open_compl_iff` -- complement `Sᶜ` of `S` is open iff `S` is closed.
+
+## Some useful tactics:
+
+### `specialize`
+
+`specialize` can be used with `_`. If you have a hypothesis
+
+`hS : ∀ {ι : Type} (U : ι → set X), (∀ (i : ι), is_open (U i)) → ...`
+
+and `U : ι → set X`, then
+
+`specialize hS U` will change `hS` to 
+
+`hS : (∀ (i : ι), is_open (U i)) → ...`
+
+But what if you now want to prove `∀ i, is_open (U i)` so you can feed it
+into `hS` as an input? You can put
+
+`specialize hS _`
+
+and then that goal will pop out. Unfortunately it pops out _under_ the
+current goal! You can swap two goals with the `swap` tactic though :-)
+
+### `change`
+
+If your goal is `⊢ P` and `P` is definitionally equal to `Q`, then you
+can write `change Q` and the goal will change to `Q`. Sometimes useful
+because rewriting works up to syntactic equality, which is stronger
+than definitional equality.
+
+### `rwa`
+
+`rwa h` just means `rw h, assumption`
+
+### `contradiction`
+
+If you have `h1 : P` and `h2 : ¬ P` as hypotheses, then you can prove any goal with
+the `contradiction` tactic, which just does `exfalso, apply h2, exact h1`.
+
+### `set`
+
+Note : The `set` tactic is totally unrelated to the `set X` type of subsets of `X`!
+
+The `set` tactic can be used to define things. For example
+`set T := f '' S with hT_def,` will define `T` to be `f '' S`
+and will also define `hT_def : T = f '' S`.
+
 -/
+
+#check is_open_compl_iff
 lemma image_compact_of_compact (hf : continuous f) (S : set X) (hS : is_compact S) :
   is_compact (f '' S) :=
 begin
-  -- proof we formalise:
+  -- proof I recommend:
   -- (1) cover f''s with opens. Want finite subcover
   -- (2) pull back
   -- (3) finite subcover
   -- (4) push forward
+
+  -- start by changing `is_compact` to something we can work with.
   rw compact_iff_finite_subcover' at hS ⊢,
+  -- Define `T` to be `f '' S` -- why not?
+  set T := f '' S with hT_def,
+  -- Now `T = f '' S` and `hT_def` tells us that.
+  -- Note that `set T := ...` is about the *tactic* `set`.
+
+  -- OK let's go.
   -- Say we have a cover of `f '' S` by opens `U i` for `i : ι`.
   intro ι,
   intro U,
   intro hU,
   intro hcoverU,
-  -- Define `T` to be `f '' S` -- why not?
-  set T := f '' S with hT_def,
+  
   -- Define `V i` to be the pullback of `U i`.
   set V : ι → set X := λ i, f ⁻¹' (U i) with hV_def,
   -- Let's check that the V's are open and cover `S`.

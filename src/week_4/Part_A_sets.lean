@@ -72,40 +72,7 @@ If `T : set Y` then `f ⁻¹' T : set X` is the preimage of `T`.
 The range of `f` could be written `f '' univ`, however there
 is also `range f`. 
 
-
-
-
--/
-
-
--- continuous.is_open_preimage
--- subset_def
--- change
--- rwa
--- compact_iff_finite_subcover'
--- option.rec 
--- is_open_compl_iff
--- mem_Union
--- mem_bUnion_iff
--- contradiction
--- rcases
-/-
-  { -- hard
-    apply finite.preimage _ hFfinite,
-    intros i hi j hj,
-    exact option.some_inj.mp },
-
-option is a monad
-
-f '' S and f ⁻¹' S
-
-hS : ∀ {ι : Type} (U : ι → set X),
-  (∀ (i : ι), is_open (U i)) →
-  (S ⊆ ⋃ (i : ι), U i) → (∃ (t : set ι), t.finite ∧ S ⊆ ⋃ (i : ι) (H : i ∈ t), U i)
-
-->   specialize hS V _, swap,
-
-  set T := f '' S with hT_def, ** I USED SET**
+Finally remember `subset_def : S ⊆ T ↔ ∀ x, x ∈ S → x ∈ T`
 
 -/
 
@@ -156,8 +123,8 @@ begin
   split,
   { intro h,
     -- don't need to `rw mem_image` because it's definitional
-    cases h with y hy,
-    cases hy with hyS hid,
+    -- rcases can do multiple `cases` at once. Note that ⟨a, b, c⟩ = ⟨a, ⟨b, c⟩⟩
+    rcases h with ⟨y, hyS, hid⟩,
     -- don't need to `rw id.def` because it's definitional
     rw ← hid,
     exact hyS },
@@ -184,6 +151,8 @@ begin
     refl }
 end
 
+-- this is the shortest explicit tactic proof I know which doesn't
+-- cheat and use the corresponding lemma in Lean's maths library:
 example : id '' S = S :=
 begin
   ext x,
@@ -195,6 +164,37 @@ begin
   -- we can just build this term
     exact ⟨x, hxS, rfl⟩ },
 end
+
+-- Other proofs which won't teach you as much:
+
+example : id '' S = S :=
+begin
+  -- it's in the library already
+  apply image_id',
+end
+
+example : id '' S = S := 
+begin
+  simp -- `image_id'` is tagged `@[simp]` so `simp` finds it.
+end
+
+-- This tactic also finds `image_id'` in the library
+example : id '' S = S := 
+begin
+  finish,
+end
+
+-- So does this one.
+example : id '' S = S := 
+begin
+  tidy
+end
+
+-- The disadvantages of these last few proofs : (a) `finish` and `tidy` are
+-- slow (b) they won't teach you much and (c) if the theorems are not
+-- already in Lean's maths library then the tactics might not be of much use.
+
+-- Let's see what you make of these lemmas about sets. 
 
 lemma image_comp (S : set X) : (g ∘ f) '' S = g '' (f '' S) :=
 begin
@@ -209,12 +209,12 @@ end
 
 open function
 
--- don't forget `dsimp` to tidy up evaluated lambdas
+-- don't forget you can use `dsimp` to tidy up evaluated lambdas
 lemma image_injective : injective f → injective (λ S, f '' S) :=
 begin
   intro hf,
   intros S T h,
-  dsimp at h,
+  dsimp at h, -- not necessary, but nice to be tidy.
   ext x,
   -- too lazy to write down the same proof twice:
   suffices : ∀ S T : set X, f '' S = f '' T → x ∈ S → x ∈ T,
@@ -222,7 +222,7 @@ begin
       apply this _ _ h,
       apply this _ _ h.symm,
   },
-  clear h S T,
+  clear h S T, -- not necessary, but we don't need them any more.
   intros S T h hxS,
   have hfx : f x ∈ f '' T,
   { rw ← h,
@@ -236,6 +236,8 @@ end
 /-!
 
 ## preimage
+
+The notation : `f ⁻¹' T`. The useful lemma:
 
 `mem_preimage : x ∈ f ⁻¹' T ↔ f x ∈ T`
 
@@ -289,8 +291,8 @@ begin
   split,
   { rintro ⟨y, hyS, h⟩,
   rwa ← (hf h) },
-  { -- I'm tiring of these
-    tidy },
+  { intro h,
+    use [x, h, rfl] }
 end
 
 /-!

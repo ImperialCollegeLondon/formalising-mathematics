@@ -34,7 +34,7 @@ with the recursor for `option`, namely `option.rec`.
 -/
 variables {X Y : Type}
 
-def g (f : X → Y) (y : Y) : option X → Y := λ t, option.rec y f t
+def g (y : Y) (f : X → Y) : option X → Y := λ t, option.rec y f t
 
 -- I claim that `g` is the function we require. Note
 -- that `g` takes `f` and `y` as explicit inputs 
@@ -43,12 +43,12 @@ def g (f : X → Y) (y : Y) : option X → Y := λ t, option.rec y f t
 
 variables (f : X → Y) (y : Y)
 
-example : (g f y) none = y := 
+example : (g y f) none = y := 
 begin
   refl
 end
 
-example (x : X) : (g f y) (some x) = f x :=
+example (x : X) : (g y f) (some x) = f x :=
 begin
   refl
 end
@@ -67,13 +67,12 @@ end
 def option_func (f : X → Y) : option X → option Y :=
 λ t, option.rec none (some ∘ f) t
 
--- now check two functor axioms, `option_id` and `option_comp`
+-- now check two axioms for a functor, `option_id` and `option_comp`
 
 -- NB you can do `cases ox with x` on `ox : option X` to break down into the
 -- `none` and `some x` cases.
-lemma option_id : ∀ ox : option X, option_func (id : X → X) ox = ox :=
+lemma option_id (ox : option X) : option_func (id : X → X) ox = ox :=
 begin
-  intro ox,
   cases ox with x,
   { refl },
   { refl }
@@ -89,6 +88,7 @@ begin
   { refl },
 end
 
+-- Now we define the structure of a monad, an `eta` and a `mu`.
 
 def eta {X : Type} : X → option X := some 
 
@@ -134,3 +134,5 @@ begin
   { refl },
   { refl },
 end
+
+-- please feel free to check -- I don't know much about monads!
