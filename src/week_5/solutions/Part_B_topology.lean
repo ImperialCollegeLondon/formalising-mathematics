@@ -50,38 +50,6 @@ example (a : α): filter α :=
 
 /-
 
-The lemma we need to make progress on x ∈ 𝓝 a is
-
-`mem_interior_iff_mem_nhds : a ∈ interior s ↔ s ∈ 𝓝 a`
-
-The relation between interior and closure is
-
-`closure_eq_compl_interior_compl : closure s = (interior sᶜ)ᶜ`
-
---
-
-See if you can get your head around this one. It's called `mem_closure_iff_frequently`
-Think of it as saying "`a` is in the closure of `s` iff however small you make
-a neighbourhood of `a`, something in it is in `s`. This is a bit tricky.
-
-You can `rw filter.frequently` to turn the question into one about
-`filter.eventually`.
-
--/
-
--- this is `mem_closure_iff_frequently` in mathlib
-example {S : set α} {a : α} : a ∈ closure S ↔ ∃ᶠ x in 𝓝 a, x ∈ S :=
-begin
-  rw closure_eq_compl_interior_compl,
-  rw filter.frequently,
-  rw filter.eventually_iff,
-  rw ← mem_interior_iff_mem_nhds,
-  -- ⊢ a ∈ (interior Sᶜ)ᶜ ↔ a ∉ interior {x : α | x ∉ S}
-  refl,
-end
-
-/-
-
 A cluster point of a filter `F : filter α` (also known as an accumulation
 point or a limit point) is `x : α` such that `𝓝 x ⊓ F ≠ ⊥`. Whatever
 does this mean? Recall that the order on filters is upside-down, so
@@ -106,21 +74,6 @@ begin
   apply hxF hU,
   rw filter.le_def at hFG,
   apply hFG _ hV,
-end
-
-
-/-
-
-Take a look at `cluster_pt_principal_iff_frequently` and see if you
-can prove the following result using it and `mem_closure_iff_frequently`.
-This result is called `mem_closure_iff_cluster_pt` in mathlib.
--/
-
-example {s : set α} {a : α} :
-  a ∈ closure s ↔ cluster_pt a (𝓟 s) :=
-begin
-  rw mem_closure_iff_frequently,
-  rw cluster_pt_principal_iff_frequently,
 end
 
 /-
@@ -150,7 +103,10 @@ because `t` is closed. You might find
 
 `is_closed.closure_eq : is_closed t → closure t = t`
 
-useful, and of course `mem_closure_iff_cluster_pt` (which we just proved).
+useful, and also
+
+`mem_closure_iff_cluster_pt : a ∈ closure S ↔ cluster_pt a (𝓟 S)`
+
 -/
 
 lemma closed_of_compact (s : set X) (hs : is_compact s)

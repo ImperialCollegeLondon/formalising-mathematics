@@ -1,18 +1,23 @@
-import order.filter.basic
-
+import order.filter.basic -- the basics
 /-
 
-## Filters
+# Filters
 
--/
-
-/-
+## Introduction
 
 A topological space structure on a type `α` is a collection of subsets of `α`
 satisfying some axioms. A filter is a similar kind of thing -- a collection
-of subsets satisfying some different axioms.
+of subsets of `α` satisfying some different axioms.
 
-The formal definition is this: a filter on `α` is a collection `F` of subsets
+Filters can be used to express a very general idea of a limit: for
+example the limit of a sequence `a n` as `n → ∞`, the limit of a
+continuous function `f(x)` as `x → x₀` or as `x → +∞` or as `x` tends
+to `x₀` from above or... . You could say that they are a beautiful abstraction
+of the concept of a limit. 
+
+## Definition
+
+Here's the definition: a filter on `α` is a collection `F` of subsets
 of `α` satisfying the following three axioms:
 
 1) `α ∈ F` (in Lean this is written `univ ∈ F` because a distinction is made
@@ -20,10 +25,12 @@ between the type `α` and the term `univ : set α` corresponding to `α`)
 
 2) If `S ∈ F` and `S ⊆ T` then `T ∈ F` -- i.e. `F` is "upwards-closed",
 
-3) If `A ∈ F` and `B ∈ F` then `A ∩ B ∈ F`. 
+3) If `A ∈ F` and `B ∈ F` then `A ∩ B ∈ F` -- i.e. `F` is closed under
+binary intersections.
 
-Note that (1) and (3) together imply that (and are indeed equivalent to)
-the intersection of finitely many elements of `F` is in `F`. 
+Note that (1) and (3) together imply (and are indeed equivalent to)
+the statement that `F` is closed under all finite intersections,
+i.e. the intersection of finitely many elements of `F` is in `F`. 
 
 Here's the Lean definition:
 
@@ -35,24 +42,35 @@ structure filter (α : Type*) :=
 (inter_sets {x y}       : x ∈ sets → y ∈ sets → x ∩ y ∈ sets)
 ```
 
-Those of you who have seen definitions of filters in other places
-might have seen an extra axiom saying that the filter is not allowed
-to be the collection of all subsets of `α`. This turns out to be rather
-an unnatural axiom, it is like demanding that if `R` is a ring then
-`R` is not allowed to be an ideal of `R`. The advantage of such a
+A rather simple example of a filter is the filter of all subsets of `α`.
+Those of you who have seen definitions of filters in other places (for
+example in Bourbaki) might have seen an extra axiom saying that the filter is
+not allowed to be the collection of all subsets of `α`. This turns out to be
+rather an unnatural axiom, it is like demanding in ideal theory that if `R` is a
+ring then `R` is not allowed to be an ideal of `R`. The advantage of such a
 definition of an ideal would be that a maximal ideal of `R` would literally
 be a maximal element of the ideals of `R`, but this advantage is outweighed by
 the disadvantages (e.g. the image of an ideal along a ring homomorphism
-might not be an ideal). To preserve the functoriality of filters, mathlib does
-not have this as an axiom for filters, so the two "extreme" filters are
-the one which only contains `univ`, and the one which contains all subsets.
+might not be an ideal, you cannot add two ideals etc). To preserve the
+functoriality of filters, mathlib does not have this as an axiom for filters,
+so there are two "extreme" filters on `α`, namely the one which only contains
+`univ` (note that this is forced by `univ_sets`), and the one which contains
+all subsets of `α`. These two filters are called `⊥` and `⊤`, although you might
+be surprised to find out which one is which.
+
+## Notation, helpful tactics and helpful theorems
+
+We are not going to build filters from first principles, we will be
+using Lean's API for filters. 
 
 Say `α : Type` and `F : filter α` and `S : set α`. The notation `S ∈ F` is
-defined to mean `S ∈ F.sets`
+defined to mean `S ∈ F.sets`. 
 
 The `ext` tactic can be used to reduce a goal `F = G` to a goal of
 the form `∀ S, S ∈ F ↔ S ∈ G`.
 
+The fields of the structure mention things like `S ∈ F.sets`, so the
+axioms are restated with different names, but using the `S ∈ F` notation.
 The lemmas corresponding to the definitions are in the `filter` namespace
 and are called:
 
@@ -62,6 +80,7 @@ and are called:
 
 -/
 
+-- Variables!
 -- let `α` be a type, let `F` be a filter on `α`, and let `S` and `T`
 -- denote subsets of `α`.
 
@@ -70,7 +89,10 @@ variables (α : Type) (F : filter α) (S T : set α)
 open filter set 
 
 /-
-For this one it's useful to know (from the set namespace)
+Let's start with a warm-up question: Two sets `S` and `T` are both in
+a filter `F` iff their intersection is. 
+
+For this one it's useful to know the following results (from the set namespace)
 `inter_subset_left S T : S ∩ T ⊆ S`
 and
 `inter_subset_right S T : S ∩ T ⊆ S`
@@ -80,10 +102,10 @@ begin
   split,
   { intro hST,
     split,
-    { apply filter.mem_sets_of_superset hST,
-      exact set.inter_subset_left S T },
-    { apply filter.mem_sets_of_superset hST,
-      exact set.inter_subset_right S T } },
+    { apply mem_sets_of_superset hST,
+      exact inter_subset_left S T },
+    { apply mem_sets_of_superset hST,
+      exact inter_subset_right S T } },
   { rintros ⟨hS, hT⟩,
     exact inter_mem_sets hS hT }
 end
@@ -96,12 +118,12 @@ Helpful for this exercise:
 `mem_univ s : s ∈ univ`
 `subset.trans : A ⊆ B → B ⊆ C → A ⊆ C`
 `subset_inter : X ⊆ S → X ⊆ T → X ⊆ S ∩ T`
-(but you could probably prove these last two things yourself)
-
-Finally, remember if your goal is `T ∈ {S : set α | X ⊆ S}` you can
-`rw mem_set_of_eq` to get it into the more familiar form `X ⊆ T`,
-or even just `change X ⊆ T`.
+(but you could probably prove those last two things directly yourself)
+`mem_set_of_eq : x ∈ {a : α | p a} = p x`
+(this one is definitional, so you could use `change` instead, or just
+not rewrite it at all)
 -/
+
 example (X : set α) : filter α :=
 { sets := {S : set α | X ⊆ S},
   univ_sets := begin
@@ -110,16 +132,13 @@ example (X : set α) : filter α :=
   end,
   sets_of_superset := begin
     intros S T hS hT,
-    change X ⊆ T,
-    change X ⊆ S at hS,
+--    change X ⊆ T,
+--    change X ⊆ S at hS,
     exact subset.trans hS hT,
   end,
   inter_sets := begin
     intros S T hS hT,
-    rw mem_set_of_eq,
-    change X ⊆ S at hS,
-    change X ⊆ T at hT,
-    change X ⊆ S ∩ T,
+--    rw mem_set_of_eq at ⊢ hS hT,
     exact subset_inter hS hT,
   end }
 
@@ -133,7 +152,7 @@ open_locale filter
 
 /-
 
-## The order on filters
+## The order (≤) on filters
 
 The following is unsurprising: the collection of all filters on `α` is
 partially ordered. Perhaps more surprising: the order is the other way
@@ -193,25 +212,67 @@ by a collection of subsets of `α` -- this is the smallest topology
 for which the given subsets are all open -- it's also possible to talk
 about the filter generated by a collection of subsets of `α`. One
 can define it as the intersection of all the filters that contain your
-given collection of aubsets.
+given collection of subsets.
 
 In order theory, given a partial order (like the partial order on filters)
 you can start asking whether infs and sups exist. Filters are an example
 where all these things exist (finite and infinite infs and sups) and they
-satisfy a natural collection of axioms, making them a complete lattice.
-One can prove this by showing that "filter generated by these sets"
-and "underlying sets of a filter" are adjoint functors and then using
-the theory of Galois insertions. I talked about this a bit when doing
+satisfy a natural collection of axioms, making them into what is called a
+*complete lattice*. One can prove this by showing that "filter generated by
+these sets" and "underlying sets of a filter" are adjoint functors and then
+using the theory of Galois insertions. I talked about this a bit when doing
 subgroups, and won't talk about it again.
 
 -/
 
 /-
 
-## Another example of a filter -- the cofinite filter
+## Other examples of filters.
 
-Let's see a non-principal example of a filter on ℕ.
-The _cofinite filter_ on ℕ has as its sets the subsets `S : set ℕ`
+### `at_top` filter on a totally ordered set
+
+Let `L` be a non-empty totally ordered set. Let's say that a subset `X` of `L` is
+"big" if there exists `x : L` such for all `y ≥ x`, `y ∈ X`. 
+I claim that the big subsets are a filter. Check this.
+
+Implementation notes: `linear_order L` is the type of linear orders on `L`.
+`e : L` is just an easy way of saying `L` is nonempty.
+
+Recall that `max x y` is the max of x and y in a `linear_order`, and
+`le_max_left a b : a ≤ max a b` and similarly `le_max_right`. 
+-/
+def at_top (L : Type) [linear_order L] (e : L) : filter L :=
+{ sets := {X : set L | ∃ x : L, ∀ y, x ≤ y → y ∈ X},
+  univ_sets := begin
+    use e,
+    intros y hy,
+    exact mem_univ y,    
+  end,
+  sets_of_superset := begin
+    rintros X Y ⟨x, hX⟩ hXY,
+    --rw mem_set_of_eq,
+    use x,
+    intros y hxy,
+    --rw subset_def at hXY,
+    apply hXY,
+    exact hX _ hxy,
+  end,
+  inter_sets := begin
+    rintros X Y ⟨x, hX⟩ ⟨y, hY⟩,
+    use max x y,
+    intros z hz,
+    split,
+    { apply hX, 
+      apply le_trans _ hz,
+      exact le_max_left x y },
+    { exact hY _ (le_trans (le_max_right _ _) hz) }
+  end }
+
+/-
+ 
+### the cofinite filter
+
+The _cofinite filter_ on a type `α` has as its sets the subsets `S : set α`
 with the property that `Sᶜ`, the complement of `S`, is finite.
 Let's show that these are a filter.
 
@@ -225,8 +286,8 @@ Things you might find helpful:
 `finite.union : S.finite → T.finite → (S ∪ T).finite`
 -/
 
-def natural_cofinite : filter ℕ :=
-{ sets := { S : set ℕ | (Sᶜ).finite },
+def cofinite (α : Type) : filter α :=
+{ sets := { S : set α | (Sᶜ).finite },
   univ_sets := begin
     rw mem_set_of_eq,
     rw compl_univ,
@@ -247,37 +308,16 @@ def natural_cofinite : filter ℕ :=
 
 /-
 
-## Things happening eventually and frequently.
+### Exercises (to do on paper):
 
-If `P : α → Prop` is a true-false statement attached to each element of α,
-then `{x : α | P x}` is a subset of `α`. The notation
+(1) prove that the cofinite filter on a finite type is the entire power set filter.
+(2) prove that the cofinite filter on `ℕ` is equal to the `at_top` filter.
+(3) Prove that the cofinite filter on `ℤ` is not equal to the `at_top` filter.
+(4) Prove that the cofinite filter on `ℕ` is not principal.
 
-`∀ᶠ x in F, P x`, pronounced "`P` is eventually true (with respect to `F`)"
-  simply means that `{x | p x} ∈ F`.
-
-`eventually_iff : (∀ᶠ (x : α) in F, P x) ↔ {x : α | P x} ∈ F`
-
-For example, `∀ᶠ x in f, true` is true because `univ ∈ F`.
-
-`∃ᶠ x in F, P x`, pronounced "`P` is frequently true", means
-that `{x | ¬p x} ∉ f`.
-
-To put it another way:
-
-`lemma frequently_iff : (∃ᶠ x in f, P x) ↔ ∀ {U}, U ∈ f → ∃ x ∈ U, P x`
-
-One can check things like `(¬ ∀ᶠ x in f, p x) ↔ (∃ᶠ x in f, ¬ p x)` and so on.
-
--/
-
-#check filter.frequently
-
--- Appendix! (harder)
-
-/-
-
-We can prove that the cofinite filter on ℕ is not principal, but
-the proof uses a bunch of lemmas from the set API. You don't need
+You can try them in Lean but you will have to be a master of finiteness.
+Here, for example, are some of the ideas you'll need to do (4) in Lean.
+The proof uses a bunch of lemmas from the set API. You don't need
 to be able to do this to do the topology stuff in the next part. 
 
 Here are some of the things I used:
@@ -301,7 +341,7 @@ lemma set.infinite.nonempty {α} {s : set α} (h : s.infinite) : ∃ a : α, a �
 let a := set.infinite.nat_embedding s h 37 in ⟨a.1, a.2⟩
 
 -- This is also convenient for rewriting purposes:
-lemma mem_natural_cofinite {S : set ℕ} : S ∈ natural_cofinite ↔ Sᶜ.finite :=
+lemma mem_cofinite {S : set ℕ} : S ∈ cofinite ℕ ↔ Sᶜ.finite :=
 begin
   -- true by definition
   refl
@@ -310,12 +350,12 @@ end
 -- Here's a proof which one can formalise: if natural_cofinite = 𝓟 S then S must
 -- be cofinite and hence infinite and hence non-empty, but then if a ∈ S
 -- then S \ {a} causes us problems as it's cofinite but doesn't contain `S`.
-theorem cofinite_not_principal : ∀ S : set ℕ, natural_cofinite ≠ 𝓟 S :=
+theorem cofinite_not_principal : ∀ S : set ℕ, cofinite ℕ ≠ 𝓟 S :=
 begin
   intros S h,
   rw filter.ext_iff at h,
   have hS := h S,
-  rw mem_natural_cofinite at hS,
+  rw mem_cofinite at hS,
   have hS2 : Sᶜ.finite,
   { rw hS,
     apply mem_principal_self },
@@ -325,8 +365,8 @@ begin
   cases hS4 with a ha,
   set T := S \ {a} with hTdef,
   specialize h T,
-  have hT : T ∈ natural_cofinite,
-  { rw [mem_natural_cofinite, hTdef, diff_eq_compl_inter, compl_inter, compl_compl],
+  have hT : T ∈ cofinite ℕ,
+  { rw [mem_cofinite, hTdef, diff_eq_compl_inter, compl_inter, compl_compl],
     apply finite.union _ hS2,
     apply finite_singleton },
   rw h at hT,
