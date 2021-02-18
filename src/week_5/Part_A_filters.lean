@@ -121,7 +121,7 @@ it from the axioms of a filter.
 For this one it's useful to know the following results (from the set namespace)
 `inter_subset_left S T : S ∩ T ⊆ S`
 and
-`inter_subset_right S T : S ∩ T ⊆ S`
+`inter_subset_right S T : S ∩ T ⊆ T`
 -/
 example : S ∩ T ∈ F ↔ S ∈ F ∧ T ∈ F :=
 begin
