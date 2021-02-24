@@ -37,7 +37,8 @@ begin
   refl,
 end
 
-example (a b : ℕ → ℝ) (l m : ℝ) (ha : is_limit a l) (hb : is_limit b m) :
+theorem is_limit_mul (a b : ℕ → ℝ) (l m : ℝ)
+  (ha : is_limit a l) (hb : is_limit b m) :
   is_limit (a * b) (l * m) :=
 begin
   rw is_limit_iff_tendsto at *,
@@ -48,6 +49,14 @@ end
 
 This was much less painful than what we went through in week 3! So where
 did the work go?
+
+The next 150 lines of this file discuss the first proof, involving
+`metric.tendsto_at_top`. There are no exercises here, so if you
+want to get on with the proving you can skip straight down to
+the `## tendsto.mul` section on line 176 or so, where I talk
+about the second proof and set some exercises.
+
+The first proof 
 
 ## Definitions in Lean
 
@@ -143,7 +152,8 @@ called "filter.eventually" :
 you can `rw eventually_iff`)
 
 and then it just boils down to the following two mathematical facts
-(here `ball l ε` is the open ball radius `ε` centre `l` )
+(here `ball l ε` is the open ball radius `ε` centre `l` ),
+the first being `metric.tendsto_nhds` and the second `mem_at_top_sets`:
 
 1) If `a` is in a metric space, then `S ∈ 𝓝 l ↔ ∃ ε > 0, ball l ε ⊆ S`
 2) If `at_top` is the filter on on `ℕ` that we saw last time then
@@ -159,7 +169,9 @@ which translates into
 `∀ S : set ℝ, (∃ ε > 0, ball l ε ⊆ S) → (∃ N, n ≥ N → a n ∈ S)`
 
 and if you unfold the logical packaging you will see that this is just
-the usual definition of `is_limit`.
+the usual definition of `is_limit` (note that `a n ∈ ball l ε` is
+definitionally equal to `dist (a n) l < ε` which, for the reals, is
+definitionally equal to `|a n - l| < ε`).
 
 ## tendsto.mul
 
@@ -181,14 +193,22 @@ out that it says the following: if we have a topological space `M` with a
 continuous multiplication on it, and if `F` is a filter on `α` and `f` and `g`
 are maps `α → M`, then `tendsto f F (𝓝 l)` and `tendsto g F (𝓝 m)` implies
 `tendsto (f * g) F 𝓝 (l * m)`. We apply this with `F` the cofinite filter
-and we're done! Oh, there is one thing: how did Lean know that multiplication
-on ℝ was a continuous function?
+and we're done, at least modulo the assertion that multiplication
+on ℝ is a continuous function. How did Lean know this? Well, 
+`[has_continuous_mul M]` was in square brackets so that means that
+the type class inference system is supposed to deal with it. Let's
+see how it gets on with the assertion that multiplication is continuous
+on the reals.
 
 -/
 
--- Ask the type class inference system whether multiplication on ℝ is continuous
-example : has_continuous_mul ℝ := infer_instance
--- It is!
+-- multiplication is continuous on the reals.
+example : has_continuous_mul ℝ :=
+begin
+  -- Ask the type class inference system whether it knows this
+  apply_instance
+end
+-- It does!
 
 /-
 
@@ -199,7 +219,53 @@ upper bound, and that the reals were a topological ring (and hence
 multiplication was continuous). But this price was paid way back in 2018
 so we mathematicians can use these facts for free.
 
-All that remains then, is to prove `tendsto.mul`, and this is a statement
-about filters on topologial spaces, so let's do it.
+All that remains then, if we want to see the details, is to
+*prove* `tendsto.mul`, and this is a statement about filters on topological
+spaces, so let's do it. First -- what does `continuous` mean?
+
+## continuity
+
+Let `X` and `Y` be topological spaces, and say `f : X → Y` is a function.
+
 -/
+variables (X Y : Type) [topological_space X] [topological_space Y] (f : X → Y)
+
+/-
+
+If `x : X`, then what does it mean for `f` to be continuous at `x`?
+Intuitively, it means that if you move `x` by a small amount, then `f x`
+moves by a small amount. In other words, `f` sends a small neighbourhood
+of `x` into a small neighbourhood of `f x`. 
+
+If our mental model of `𝓝 x` is some kind of generalised set corresponding
+to an infinitesimally small neighbourhood of `x`, you will see why
+Lean makes the following definition of `continuous_at`:
+
+-/
+
+lemma continuous_at_def (x : X) :
+  continuous_at f x ↔ tendsto f (𝓝 x) (𝓝 (f x)) :=
+begin
+  -- true by definition
+  refl
+end
+
+/-
+
+Out of interest, you were probably told the definition of what it means
+for a function `f : X → Y` between metric spaces to be continuous at `x`.
+Were you ever told what it means for a function between topological spaces
+to be continuous at `x`, rather than just continuous on all of `X`? This
+is what it means.
+
+Now let's start on the proof of `tendsto.mul`, by building an API
+for the `continuous_at` definition. 
+-/
+
+-- this is called continuous_at_id
+example (x : X) : continuous_at id x :=
+begin
+  exact tendsto_id,
+end
+
 
