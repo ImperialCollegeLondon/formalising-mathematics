@@ -250,6 +250,44 @@ end
 
 /-
 
+## tendsto
+
+The definition: if `f : X → Y` and `F : filter X` and `G : filter Y`
+then `tendsto f F G : Prop := map f F ≤ G`. This is a definition (it
+has type `Prop`), not the proof of a theorem. It is a true-false statement
+attached to `f`, `F` and `G`, it's a bit like saying "f is continuous at x"
+or something like that, it might be true and it might be false.
+
+The mental model you might want to have of the definition is that
+`tendsto f F G` means that the function `f` restricts to a function
+from the generalized set `F` to the generalized set `G`.
+
+-/
+
+lemma tendsto_def (F : filter X) (G : filter Y) :
+  tendsto f F G ↔ ∀ T : set Y, T ∈ G → f ⁻¹' T ∈ F :=
+begin
+  -- true by definition
+  refl
+end
+
+-- Let's make a basic API for `tendsto`
+
+lemma tendsto_id (F : filter X) : tendsto id F F :=
+begin
+  intro S,
+  exact id,
+end
+
+lemma tendsto_comp (g : Y → Z) (F : filter X) (G : filter Z) :
+  tendsto (g ∘ f) F G ↔ tendsto g (F.map f) G :=
+begin
+  refl,
+end
+
+
+/-
+
 ## Pulling back filters
 
 This is harder. Say `f : X → Y` and `G : filter Y`. Let's make a naive
@@ -261,17 +299,18 @@ on `X`. For example, there is no reason to espect that `f '' univ ∈ G`
 if `f` is not surjective. 
 
 There are two ways of fixing this, both of which (I think) lead to the
-same answer! Remember that our model of a filter `G` is some kind of fuzzy set.
-If `T : set Y` then `T ∈ G` is supposed to mean that the fuzzy set `G` is a
-subset of `T`. So this should imply that `f⁻¹(G) ⊆ f⁻¹(T)`. In particular,
-if `T ∈ G` and `f⁻¹(T) ⊆ S` then this should mean `f⁻¹(G) ⊆ S` and hence
-`S ∈ f⁻¹(G)`. Let's try this and see if it works.
+same answer! Remember that our model of a filter `G` is some kind of
+generalised notion of a set. If `T : set Y` then `T ∈ G` is supposed to mean
+that the "set" `G` is a subset of `T`. So this should imply
+that `f⁻¹(G) ⊆ f⁻¹(T)`. In particular, if `T ∈ G` and `f⁻¹(T) ⊆ S` then this
+should mean `f⁻¹(G) ⊆ S` and hence `S ∈ f⁻¹(G)`. Let's try this and see if
+it works.
 
 Random useful lemmas (you might be getting to the point where you can
 guess the names of the lemmas):
 
 `subset_univ S : S ⊆ univ`
-
+`subset.trans : A ⊆ B → B ⊆ C → A ⊆ C`
 -/
 
 def comap (G : filter Y) : filter X :=
@@ -294,6 +333,8 @@ def comap (G : filter Y) : filter X :=
     exact ⟨hUS hxU, hVT hxV⟩, 
   end }
 
+-- If you want to, you can check some preliminary properties of `comap`. 
+-- Otherwise just skip to `tendsto`
 
 
 end xena
