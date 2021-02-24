@@ -1,0 +1,300 @@
+import order.filter.basic
+
+/-
+
+# tendsto
+
+If `X` and `Y` are types, `φ : X → Y` is a function,
+and `F : filter X` and `G : filter Y` are filters, then
+
+`filter.tendsto φ F G`
+
+is a true-false statement, which is pronounced something like
+"`F` tends to `G` along `φ`". Of course we will `open filter`
+in this file, so you can just write `tendsto φ F G`, or if
+you like the dot notation you can even write `F.tendsto φ G`.
+
+## Geometric meaning of `tendsto`.
+
+Let's start by thinking about the easy case where `F` and `G`
+are actually subsets of `X` and `Y` (that is, principal filters,
+associated to sets which we will also call `F` and `G`). In this case,
+`tendsto φ F G` simply means "`φ` restricts to a function
+from `F` to `G`", or in other words `∀ x ∈ F, φ(x) ∈ G`.
+
+There are two other ways of writing this predicate. The first
+involves pushing a set forward along a map. If `F` is a subset of `X`
+then let `φ(F)` denote the image of `F` under `φ`, that
+is, the subset `{y : Y | ∃ x : X, φ x = y}` of `Y`.
+Then `tendsto φ F G` simply means `φ(F) ⊆ G`.
+
+The second involves pulling a set back along a map. If `G` is a subset
+of `Y` then let `φ⁻¹(G)` denote the preimage of `G` under `φ`,
+that is, the subset `{x : X | φ x ∈ G}` of `Y`. Then `tendsto φ F G`
+simply means `F ⊆ φ⁻¹(G)`. 
+
+This is how it all works in the case of sets. What we need to
+do today is to figure out how to push forward and pull back
+filters along a map `φ`. Once we have done this, then we can
+prove `φ(F) ≤ G ↔ F ≤ φ⁻¹(G)` and use either one of these
+as our definition of `tendsto φ F G` -- it doesn't matter which.
+
+## Digression : adjoint functors.
+
+The discussion below is not needed to be able to do this week's
+problems, but it might provide some helpful background for some.
+Also note that anyone who still doens't like the word "type" can
+literally just change it for the word "set" (and change "term of
+type" to "element of set"), which is how arguments
+of the below kind would appear in the traditional mathematical
+literature.
+
+Partially ordered types, such as the type of subsets of a fixed
+type `X` or the type of filters on `X`, are actually very simple
+examples of categories. In general if `P` is a partially ordered type
+and `x,y` are terms of type `P` then the idea is that we can
+define `Hom(x,y)` to have exactly one element if `x ≤ y` is true,
+and no elements at all if `x ≤ y` is false. The structure/axioms for
+a category are that `Hom(x,x)` is supposed to have an identity
+element, which follows from reflexivity of `≤`, and that one can
+compose morphisms, which follows from transitivity of `≤`.
+Antisymmetry states that if two objects are isomorphic (i.e.,
+in this case, if `Hom(x,y)` and `Hom(y,x)` are both nonempty),
+then they are equal. If `φ : X → Y` is a map of types, then
+pushing forward subsets and pulling back subsets are both
+functors from `set X` to `set Y`, because `S ⊆ T → φ(S) ⊆ φ(T)`
+and `U ⊆ V → φ⁻¹(U) ⊆ φ⁻¹(V)`. The statement that
+`φ(S) ≤ U ↔ S ≤ φ⁻¹(U)` is simply the statement that these functors
+are adjoint to each other. Today we will define pushforward and
+pullback of filters, and show that they are also a pair of
+adjoint functors, but we will not use this language. In fact there
+is a special language for adjoint functors in this simple situation:
+we will say that pushforward and pullback form a Galois connection.
+
+-/
+
+/-
+
+## Warm-up: pushing forward and pulling back subsets.
+
+Say `X` and `Y` are types, and `f : X → Y`.
+
+-/
+
+variables (X Y : Type) (f : X → Y)
+
+/-
+
+### images
+
+In Lean, the image `f(S)` of a subset `S : set X` cannot
+be denoted `f S`, because `f` expects an _element_ of `X` as
+an input, not a subset of `X`, so we need new notation.
+
+Notation : `f '' S` is the image of `S` under `f`. Let's
+check this.
+
+-/
+
+example (S : set X) : f '' S = {y : Y | ∃ x : X, x ∈ S ∧ f x = y} :=
+begin
+  -- true by definition
+  refl
+end
+
+/-
+
+### preimages
+
+In Lean, the preimage `f⁻¹(T)` of a subset `T : set Y` cannot
+be denoted `f⁻¹ T` because `⁻¹` is the inverse notation in group
+theory, so if anything would be a function from `Y` to `X`,
+not a function on subsets of `Y`. 
+
+Notation : `f ⁻¹' T` is the preimage of `T` under `f`. Let's
+check this.
+
+Pro shortcut: `\-'` for `⁻¹'` 
+
+-/
+
+example (T : set Y) : f ⁻¹' T = {x : X | f x ∈ T} :=
+begin
+  -- true by definition
+  refl
+end
+
+/-
+
+I claim that the following conditions on `S : set X` and `T : set Y`
+are equivalent:
+
+1) `f '' S ⊆ T`
+2) `S ⊆ f⁻¹' T`
+
+Indeed, they both say that `f` restricts to a function from `S` to `T`.
+Let's check this. You might find
+
+`mem_preimage : a ∈ f ⁻¹' s ↔ f a ∈ s`
+
+and 
+
+-/
+
+open set
+
+example (S : set X) (T : set Y) : f '' S ⊆ T ↔ S ⊆ f⁻¹' T :=
+begin
+  split,
+  { intros h x hxS,
+    -- rw subset_def at h,
+    -- rw mem_preimage,
+    apply h,
+    use [x, hxS, rfl] },
+  { rintros h - ⟨x, hxS, rfl⟩,
+    exact h hxS }
+end
+
+/-
+
+## Pushing forward filters.
+
+Pushing forward is easy, so let's do that first.
+It's called `filter.map` in Lean.
+
+We define the pushforward filter `map f F` on `Y` to be the
+obvious thing: a subset of `Y` is in the filter iff `f⁻¹(Y)`
+is in `F`. Let's check this is a filter.  
+
+Reminder of some helpful lemmas:
+
+In `set`:
+`mem_set_of_eq : a ∈ {x : α | p x} = p a` -- definitional
+
+In `filter`:
+`univ_mem_sets : univ ∈ F`
+`mem_sets_of_superset : S ∈ F → S ⊆ T → T ∈ F`
+`inter_mem_sets : S ∈ F → T ∈ F → S ∩ T ∈ F`
+
+-/
+
+open filter
+
+namespace xena 
+-- because this stuff is all defined already in the filter namespace
+
+-- this is called `F.map f` or `filter.map f F` 
+-- or just `map f F` if `filter` is open.
+def map (F : filter X) : filter Y :=
+{ sets := {T : set Y | f ⁻¹' T ∈ F },
+  univ_sets := begin
+--    rw mem_set_of_eq,
+    exact univ_mem_sets,
+  end,
+  sets_of_superset := begin
+    intros S T hS hST,
+    --rw mem_set_of_eq at *,
+    refine mem_sets_of_superset hS _,
+    intros x hx,
+    exact hST hx,
+  end,
+  inter_sets := begin
+    intros S T,
+    -- I am abusing definitional equality
+    exact inter_mem_sets,
+  end, }
+
+lemma mem_map (F : filter X) (T : set Y) : T ∈ F.map f ↔ f ⁻¹' T ∈ F :=
+begin
+  -- true by definition
+  refl
+end
+
+-- Let's check that map satisfies some basic functorialities.
+-- Recall that if your goal is to check two filters are
+-- equal then you can use the `ext` tactic.
+
+-- pushing along the identity map id : X → X doesn't change the filter.
+lemma map_id (F : filter X) : F.map id = F :=
+begin
+  ext S,
+  refl,
+end
+
+-- pushing along g ∘ f is the same as pushing along f and then g
+-- for some reason this isn't in mathlib, instead they have `map_map` which
+-- has the equality the other way.
+variables (Z : Type) (g : Y → Z)
+lemma map_comp (F : filter X) : F.map (g ∘ f) = (F.map f).map g :=
+begin
+  ext S,
+  refl,
+end
+
+open_locale filter -- for 𝓟 notation
+
+-- pushing the principal filter `𝓟 S` along `f` gives `𝓟 (f '' S)`
+lemma map_principal (S : set X) : (𝓟 S).map f = 𝓟 (f '' S) :=
+begin
+  ext T,
+--  rw mem_map,
+--  rw mem_principal_sets,
+--  rw mem_principal_sets,
+  split,
+  { rintro h y ⟨x, hx, rfl⟩,
+    exact h hx },
+  { rintro h x hx, 
+    apply h,
+    exact ⟨x, hx, rfl⟩ }
+end
+
+/-
+
+## Pulling back filters
+
+This is harder. Say `f : X → Y` and `G : filter Y`. Let's make a naive
+definition. We want a collection of subsets of `X` corresponding to the
+filter obtained by pulling back `G` along `f`. When should `S : set X` be
+in this filter? Perhaps it is when `f '' S ∈ G`. However, there is no reason
+that the collection of `S` satisfying this property should be a filter
+on `X`. For example, there is no reason to espect that `f '' univ ∈ G`
+if `f` is not surjective. 
+
+There are two ways of fixing this, both of which (I think) lead to the
+same answer! Remember that our model of a filter `G` is some kind of fuzzy set.
+If `T : set Y` then `T ∈ G` is supposed to mean that the fuzzy set `G` is a
+subset of `T`. So this should imply that `f⁻¹(G) ⊆ f⁻¹(T)`. In particular,
+if `T ∈ G` and `f⁻¹(T) ⊆ S` then this should mean `f⁻¹(G) ⊆ S` and hence
+`S ∈ f⁻¹(G)`. Let's try this and see if it works.
+
+Random useful lemmas (you might be getting to the point where you can
+guess the names of the lemmas):
+
+`subset_univ S : S ⊆ univ`
+
+-/
+
+def comap (G : filter Y) : filter X :=
+{ sets := {S : set X | ∃ T : set Y, T ∈ G ∧ f ⁻¹' T ⊆ S},
+  univ_sets := begin
+    use univ,
+    split,
+    { exact univ_mem_sets },
+    { exact subset_univ _ }
+  end,
+  sets_of_superset := begin
+    rintros S T ⟨U, hUG, hUS⟩ hST,
+    use [U, hUG],
+    exact subset.trans hUS hST
+  end,
+  inter_sets := begin
+    rintro S T ⟨U, hUG, hUS⟩ ⟨V, hVG, hVT⟩,
+    use [U ∩ V, inter_mem_sets hUG hVG],
+    rintro x ⟨hxU, hxV⟩,
+    exact ⟨hUS hxU, hVT hxV⟩, 
+  end }
+
+
+
+end xena
+
