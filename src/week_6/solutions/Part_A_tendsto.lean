@@ -180,12 +180,9 @@ In `filter`:
 
 open filter
 
-namespace xena 
--- because this stuff is all defined already in the filter namespace
-
 -- this is called `F.map f` or `filter.map f F` 
 -- or just `map f F` if `filter` is open.
-def map (F : filter X) : filter Y :=
+example (F : filter X) : filter Y :=
 { sets := {T : set Y | f ⁻¹' T ∈ F },
   univ_sets := begin
 --    rw mem_set_of_eq,
@@ -204,7 +201,8 @@ def map (F : filter X) : filter Y :=
     exact inter_mem_sets,
   end, }
 
-lemma mem_map (F : filter X) (T : set Y) : T ∈ F.map f ↔ f ⁻¹' T ∈ F :=
+-- this is `filter.mem_map` and it's true by definition.
+example (F : filter X) (T : set Y) : T ∈ F.map f ↔ f ⁻¹' T ∈ F :=
 begin
   -- true by definition
   refl
@@ -215,7 +213,8 @@ end
 -- equal then you can use the `ext` tactic.
 
 -- pushing along the identity map id : X → X doesn't change the filter.
-lemma map_id (F : filter X) : F.map id = F :=
+-- this is `filter.map_id` but see if you can prove it yourself.
+example (F : filter X) : F.map id = F :=
 begin
   ext S,
   refl,
@@ -225,7 +224,10 @@ end
 -- for some reason this isn't in mathlib, instead they have `map_map` which
 -- has the equality the other way.
 variables (Z : Type) (g : Y → Z)
-lemma map_comp (F : filter X) : F.map (g ∘ f) = (F.map f).map g :=
+
+-- this isn't in mathlib, but `filter.map_map` is the equality the other
+-- way around. See if you can prove it yourself.
+example (F : filter X) : F.map (g ∘ f) = (F.map f).map g :=
 begin
   ext S,
   refl,
@@ -234,7 +236,8 @@ end
 open_locale filter -- for 𝓟 notation
 
 -- pushing the principal filter `𝓟 S` along `f` gives `𝓟 (f '' S)`
-lemma map_principal (S : set X) : (𝓟 S).map f = 𝓟 (f '' S) :=
+-- this is `filter.map_principal` but see if you can prove it yourself.
+example (S : set X) : (𝓟 S).map f = 𝓟 (f '' S) :=
 begin
   ext T,
 --  rw mem_map,
@@ -264,7 +267,8 @@ from the generalized set `F` to the generalized set `G`.
 
 -/
 
-lemma tendsto_def (F : filter X) (G : filter Y) :
+-- this is `filter.tendsto_def`
+example (F : filter X) (G : filter Y) :
   tendsto f F G ↔ ∀ T : set Y, T ∈ G → f ⁻¹' T ∈ F :=
 begin
   -- true by definition
@@ -273,18 +277,32 @@ end
 
 -- Let's make a basic API for `tendsto`
 
-lemma tendsto_id (F : filter X) : tendsto id F F :=
+-- this is `filter.tendsto_id` but see if you can prove it yourself.
+example (F : filter X) : tendsto id F F :=
 begin
   intro S,
   exact id,
 end
 
-lemma tendsto_comp (g : Y → Z) (F : filter X) (G : filter Z) :
-  tendsto (g ∘ f) F G ↔ tendsto g (F.map f) G :=
+-- I would have called this `filter.tendsto_comp` but for some reason it's not
+-- there
+lemma tendsto_comp (F : filter X) (G : filter Y) (H : filter Z)
+  (f : X → Y) (g : Y → Z)
+  (hf : tendsto f F G) (hg : tendsto g G H) : tendsto (g ∘ f) F H :=
 begin
-  refl,
+  rintro S hS,
+  specialize hg hS,
+  specialize hf hg,
+  exact hf,
 end
 
+-- I would recommend looking at the model answer to this one if
+-- you get stuck.
+lemma tendsto_comp_map (g : Y → Z) (F : filter X) (G : filter Z) :
+  tendsto (g ∘ f) F G ↔ tendsto g (F.map f) G :=
+begin
+  refl, -- Both sides are the same, by definition. Think about it on paper!
+end
 
 /-
 
@@ -337,5 +355,4 @@ def comap (G : filter Y) : filter X :=
 -- Otherwise just skip to `tendsto`
 
 
-end xena
 
