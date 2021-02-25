@@ -394,6 +394,21 @@ begin
     exact h2 hx }
 end
 
+-- this is comap_principal. Remember `mem_principal_sets`!
+example (T : set Y) : comap f (𝓟 T) = 𝓟 (f ⁻¹' T) :=
+begin
+  ext S,
+--  rw mem_comap,
+--  rw mem_principal_sets,
+  split,
+  { rintro ⟨U, hU, h⟩,
+    refine subset.trans (λ x, _) h,
+    apply hU },
+  { intro h,
+    exact ⟨T, mem_principal_self T, h⟩ }
+end
+
+
 -- This is the proof that `map f` and `comap f` are adjoint functors,
 -- or in other words form a Galois connection. It is the "generalised set"
 -- analogue of the assertion that if S is a subset of X and T is a subset of Y
