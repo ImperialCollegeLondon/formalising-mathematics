@@ -277,7 +277,7 @@ end
 
 -- Let's make a basic API for `tendsto`
 
--- this is `filter.tendsto_id` but see if you can prove it yourself.
+-- this is `tendsto_id` but see if you can prove it yourself.
 example (F : filter X) : tendsto id F F :=
 begin
   intro S,
@@ -305,7 +305,9 @@ end
 
 /-
 
-## Pulling back filters
+## Appendix : Pulling back filters
+
+We don't use this in the next part.
 
 Say `f : X → Y` and `G : filter Y`, and we want a filter on `X`. Let's make a
 naive definition. We want a collection of subsets of `X` corresponding to the
@@ -329,8 +331,9 @@ guess the names of the lemmas):
 `subset.trans : A ⊆ B → B ⊆ C → A ⊆ C`
 -/
 
-def comap (G : filter Y) : filter X :=
-{ sets := {S : set X | ∃ T : set Y, T ∈ G ∧ f ⁻¹' T ⊆ S},
+-- this is called filter.comap
+example (G : filter Y) : filter X :=
+{ sets := {S : set X | ∃ T ∈ G, f ⁻¹' T ⊆ S},
   univ_sets := begin
     use univ,
     split,
@@ -349,7 +352,65 @@ def comap (G : filter Y) : filter X :=
     exact ⟨hUS hxU, hVT hxV⟩, 
   end }
 
+-- Let's call this mem_comap
+lemma mem_comap (f : X → Y) (G : filter Y) (S : set X) :
+  S ∈ comap f G ↔ ∃ T ∈ G, f ⁻¹' T ⊆ S :=
+begin
+  -- true by definition
+  refl
+end
+
 -- If you want to, you can check some preliminary properties of `comap`. 
 
+-- this is comap_id
+example (G : filter Y) : comap id G = G :=
+begin
+  ext S,
+  rw mem_comap,
+  split,
+  { rintro ⟨T, hT, h⟩,
+    exact mem_sets_of_superset hT h,
+  },
+  { intro hS,
+    use [S, hS],
+    refl }
+end
 
+-- this is comap_comap but the other way around
+lemma comap_comp (H : filter Z) : comap (g ∘ f) H = comap f (comap g H) :=
+begin
+  ext S,
+  simp only [mem_comap],
+  split,
+  { rintro ⟨U, hU, h⟩,
+    use g ⁻¹' U,
+    refine ⟨_, h⟩,
+    rw mem_comap,
+    use [U, hU] },
+  { rintro ⟨T, ⟨U, hU, h2⟩, h⟩,
+    use [U, hU],
+    refine subset.trans _ h,
+    intros x hx,
+    exact h2 hx }
+end
 
+-- This is the proof that `map f` and `comap f` are adjoint functors,
+-- or in other words form a Galois connection. It is the "generalised set"
+-- analogue of the assertion that if S is a subset of X and T is a subset of Y
+-- then f(S) ⊆ T ↔ S ⊆ f⁻¹(T), these both being ways to say that `f` restricts
+-- to a function from `S` to `T`.
+lemma filter.galois_connection (F : filter X) (G : filter Y) : 
+  map f F ≤ G ↔ F ≤ comap f G :=
+begin
+  split,
+  { rintro h S ⟨T, hT, hTS⟩,
+    rw le_def at h,
+    exact mem_sets_of_superset (h T hT) hTS },
+  { rintro h T hT,
+    rw le_def at h,
+    exact h (f ⁻¹' T) ⟨T, hT, subset.refl _⟩ },
+end
+
+-- indeed, `map f` and `comap f` form a Galois connection.
+example : galois_connection (map f) (comap f) :=
+filter.galois_connection X Y f 
