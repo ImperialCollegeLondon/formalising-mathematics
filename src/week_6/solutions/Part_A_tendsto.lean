@@ -284,9 +284,8 @@ begin
   exact id,
 end
 
--- I would have called this `filter.tendsto_comp` but for some reason it's not
--- there
-lemma tendsto_comp (F : filter X) (G : filter Y) (H : filter Z)
+-- this is `tendsto.comp` but see if you can prove it yourself
+example (F : filter X) (G : filter Y) (H : filter Z)
   (f : X → Y) (g : Y → Z)
   (hf : tendsto f F G) (hg : tendsto g G H) : tendsto (g ∘ f) F H :=
 begin
@@ -308,18 +307,17 @@ end
 
 ## Pulling back filters
 
-This is harder. Say `f : X → Y` and `G : filter Y`. Let's make a naive
-definition. We want a collection of subsets of `X` corresponding to the
+Say `f : X → Y` and `G : filter Y`, and we want a filter on `X`. Let's make a
+naive definition. We want a collection of subsets of `X` corresponding to the
 filter obtained by pulling back `G` along `f`. When should `S : set X` be
 in this filter? Perhaps it is when `f '' S ∈ G`. However, there is no reason
 that the collection of `S` satisfying this property should be a filter
 on `X`. For example, there is no reason to espect that `f '' univ ∈ G`
 if `f` is not surjective. 
 
-There are two ways of fixing this, both of which (I think) lead to the
-same answer! Remember that our model of a filter `G` is some kind of
-generalised notion of a set. If `T : set Y` then `T ∈ G` is supposed to mean
-that the "set" `G` is a subset of `T`. So this should imply
+Here's a way of fixing this. Remember that our model of a filter `G` is some
+kind of generalised notion of a set. If `T : set Y` then `T ∈ G` is supposed to
+mean that the "set" `G` is a subset of `T`. So this should imply
 that `f⁻¹(G) ⊆ f⁻¹(T)`. In particular, if `T ∈ G` and `f⁻¹(T) ⊆ S` then this
 should mean `f⁻¹(G) ⊆ S` and hence `S ∈ f⁻¹(G)`. Let's try this and see if
 it works.
@@ -352,7 +350,6 @@ def comap (G : filter Y) : filter X :=
   end }
 
 -- If you want to, you can check some preliminary properties of `comap`. 
--- Otherwise just skip to `tendsto`
 
 
 
