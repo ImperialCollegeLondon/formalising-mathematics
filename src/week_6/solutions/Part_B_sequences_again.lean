@@ -259,13 +259,90 @@ to be continuous at `x`, rather than just continuous on all of `X`? This
 is what it means.
 
 Now let's start on the proof of `tendsto.mul`, by building an API
-for the `continuous_at` definition. 
+for the `continuous_at` definition. Don't forget things like
+
+`tendsto_id : tendsto id x x`
+`tendsto.comp : tendsto g G H → tendsto f F G → tendsto (g ∘ f) F H`
+
+
 -/
 
--- this is called continuous_at_id
+#check tendsto.comp 
+
+
+-- this is called `continuous_at_id`. Prove it yourself using `tendsto_id`.
 example (x : X) : continuous_at id x :=
 begin
   exact tendsto_id,
 end
 
+-- recall we have `f : X → Y`. Now let's add in a `Z`.
+variables (Z : Type) [topological_space Z] (g : Y → Z)
+
+-- this is called `continuous_at.comp`. Prove it yourself using `tendsto.comp`.
+example (x : X) (hf : continuous_at f x) (hg : continuous_at g (f x)) :
+continuous_at (g ∘ f) x :=
+begin
+  exact tendsto.comp hg hf,
+end
+
+/-
+
+Now we prove a key result, called `continuous_at.prod`.
+It says that if `f : X → Y` and `g : X → Z` are continuous at `x`
+then the product map `f × g : X → Y × Z` is also continuous at `x`.
+The key fact you will need from the product topology API is 
+`mem_nhds_prod_iff : S ∈ 𝓝 ((a, b) : X × Y) ↔`
+  `∃ (U : set X) (H : U ∈ 𝓝 a) (V : set Y) (H : V ∈ 𝓝 b), U.prod V ⊆ S`
+This is all you should need about the product topology (we won't go into how
+the product topology is defined, but the key fact is that a neighbourhood
+of `(a,b) : X × Y` contains a product of neighbourhoods of `X` and of `Y`).
+
+You will also need to know
+
+`mk_mem_prod : a ∈ U → b ∈ V → (a, b) ∈ U.prod V`
+
+where for `U : set X` and `V : set Y`, `U.prod V = prod U V` is the 
+obvious subset of `X × Y`.
+-/
+
+-- this is called `tendsto.prod_mk_nhds` in Lean but try proving it yourself.
+example (f : X → Y) (g : X → Z) (x : X) (F : filter X) (y : Y) (z : Z)
+  (hf : tendsto f F (𝓝 y)) (hg : tendsto g F (𝓝 z)) :
+  tendsto (λ x, (f x, g x)) F (𝓝 (y, z)) :=
+begin
+  rintro S hS,
+  rw mem_nhds_prod_iff at hS,
+  rcases hS with ⟨U, hU, V, hV, h⟩,
+  rw mem_map,
+  -- I claim {x : X | f x ∈ U} ∈ F
+  have hfxU : {x : X | f x ∈ U} ∈ F := hf hU,
+  -- I claim {x : X | g x ∈ V} ∈ F
+  have hgxV : {x : X | g x ∈ V} ∈ F := hg hV,
+  -- so their intersection is in 𝓝 x 
+  have hfg := inter_mem_sets hfxU hgxV,
+  refine mem_sets_of_superset hfg _,
+  rintro x ⟨(hxf : f x ∈ U), (hxg : g x ∈ V)⟩,
+  apply h,
+  exact set.mk_mem_prod hxf hxg,
+end
+
+-- Armed with `continuous_at.prod`, let's prove `tendsto.mul` in
+-- the generality which we need.
+example {X M : Type} [topological_space M] [has_mul M] [has_continuous_mul M]
+  {f g : X → M} {F : filter X} {a b : M} (hf : tendsto f F (𝓝 a))
+  (hg : tendsto g F (𝓝 b)) : tendsto (λ (x : X), f x * g x) F (𝓝 (a * b)) :=
+begin
+  set f1 : X → M × M := λ x, (f x, g x) with hf1,
+  set f2 : M × M → M := λ mn, mn.1 * mn.2 with hf2,
+  have h1 : f2 ∘ f1 = f * g,
+  { sorry },
+  intros S hS,
+  rw mem_map,
+
+end
+
+
+
+#check continuous_at.prod
 
