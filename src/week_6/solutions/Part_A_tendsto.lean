@@ -180,12 +180,9 @@ In `filter`:
 
 open filter
 
-namespace xena 
--- because this stuff is all defined already in the filter namespace
-
 -- this is called `F.map f` or `filter.map f F` 
 -- or just `map f F` if `filter` is open.
-def map (F : filter X) : filter Y :=
+example (F : filter X) : filter Y :=
 { sets := {T : set Y | f ⁻¹' T ∈ F },
   univ_sets := begin
 --    rw mem_set_of_eq,
@@ -204,7 +201,8 @@ def map (F : filter X) : filter Y :=
     exact inter_mem_sets,
   end, }
 
-lemma mem_map (F : filter X) (T : set Y) : T ∈ F.map f ↔ f ⁻¹' T ∈ F :=
+-- this is `filter.mem_map` and it's true by definition.
+example (F : filter X) (T : set Y) : T ∈ F.map f ↔ f ⁻¹' T ∈ F :=
 begin
   -- true by definition
   refl
@@ -215,7 +213,8 @@ end
 -- equal then you can use the `ext` tactic.
 
 -- pushing along the identity map id : X → X doesn't change the filter.
-lemma map_id (F : filter X) : F.map id = F :=
+-- this is `filter.map_id` but see if you can prove it yourself.
+example (F : filter X) : F.map id = F :=
 begin
   ext S,
   refl,
@@ -225,7 +224,10 @@ end
 -- for some reason this isn't in mathlib, instead they have `map_map` which
 -- has the equality the other way.
 variables (Z : Type) (g : Y → Z)
-lemma map_comp (F : filter X) : F.map (g ∘ f) = (F.map f).map g :=
+
+-- this isn't in mathlib, but `filter.map_map` is the equality the other
+-- way around. See if you can prove it yourself.
+example (F : filter X) : F.map (g ∘ f) = (F.map f).map g :=
 begin
   ext S,
   refl,
@@ -234,7 +236,8 @@ end
 open_locale filter -- for 𝓟 notation
 
 -- pushing the principal filter `𝓟 S` along `f` gives `𝓟 (f '' S)`
-lemma map_principal (S : set X) : (𝓟 S).map f = 𝓟 (f '' S) :=
+-- this is `filter.map_principal` but see if you can prove it yourself.
+example (S : set X) : (𝓟 S).map f = 𝓟 (f '' S) :=
 begin
   ext T,
 --  rw mem_map,
@@ -250,32 +253,87 @@ end
 
 /-
 
-## Pulling back filters
+## tendsto
 
-This is harder. Say `f : X → Y` and `G : filter Y`. Let's make a naive
-definition. We want a collection of subsets of `X` corresponding to the
+The definition: if `f : X → Y` and `F : filter X` and `G : filter Y`
+then `tendsto f F G : Prop := map f F ≤ G`. This is a definition (it
+has type `Prop`), not the proof of a theorem. It is a true-false statement
+attached to `f`, `F` and `G`, it's a bit like saying "f is continuous at x"
+or something like that, it might be true and it might be false.
+
+The mental model you might want to have of the definition is that
+`tendsto f F G` means that the function `f` restricts to a function
+from the generalized set `F` to the generalized set `G`.
+
+-/
+
+-- this is `filter.tendsto_def`
+example (F : filter X) (G : filter Y) :
+  tendsto f F G ↔ ∀ T : set Y, T ∈ G → f ⁻¹' T ∈ F :=
+begin
+  -- true by definition
+  refl
+end
+
+-- Let's make a basic API for `tendsto`
+
+-- this is `tendsto_id` but see if you can prove it yourself.
+example (F : filter X) : tendsto id F F :=
+begin
+  intro S,
+  exact id,
+end
+
+-- this is `tendsto.comp` but see if you can prove it yourself
+example (F : filter X) (G : filter Y) (H : filter Z)
+  (f : X → Y) (g : Y → Z)
+  (hf : tendsto f F G) (hg : tendsto g G H) : tendsto (g ∘ f) F H :=
+begin
+  rintro S hS,
+  specialize hg hS,
+  specialize hf hg,
+  exact hf,
+end
+
+-- I would recommend looking at the model answer to this one if
+-- you get stuck.
+lemma tendsto_comp_map (g : Y → Z) (F : filter X) (G : filter Z) :
+  tendsto (g ∘ f) F G ↔ tendsto g (F.map f) G :=
+begin
+  refl, -- Both sides are the same, by definition. Think about it on paper!
+end
+
+/-
+
+## Appendix : Pulling back filters
+
+We don't use this in the next part.
+
+Say `f : X → Y` and `G : filter Y`, and we want a filter on `X`. Let's make a
+naive definition. We want a collection of subsets of `X` corresponding to the
 filter obtained by pulling back `G` along `f`. When should `S : set X` be
 in this filter? Perhaps it is when `f '' S ∈ G`. However, there is no reason
 that the collection of `S` satisfying this property should be a filter
 on `X`. For example, there is no reason to espect that `f '' univ ∈ G`
 if `f` is not surjective. 
 
-There are two ways of fixing this, both of which (I think) lead to the
-same answer! Remember that our model of a filter `G` is some kind of fuzzy set.
-If `T : set Y` then `T ∈ G` is supposed to mean that the fuzzy set `G` is a
-subset of `T`. So this should imply that `f⁻¹(G) ⊆ f⁻¹(T)`. In particular,
-if `T ∈ G` and `f⁻¹(T) ⊆ S` then this should mean `f⁻¹(G) ⊆ S` and hence
-`S ∈ f⁻¹(G)`. Let's try this and see if it works.
+Here's a way of fixing this. Remember that our model of a filter `G` is some
+kind of generalised notion of a set. If `T : set Y` then `T ∈ G` is supposed to
+mean that the "set" `G` is a subset of `T`. So this should imply
+that `f⁻¹(G) ⊆ f⁻¹(T)`. In particular, if `T ∈ G` and `f⁻¹(T) ⊆ S` then this
+should mean `f⁻¹(G) ⊆ S` and hence `S ∈ f⁻¹(G)`. Let's try this and see if
+it works.
 
 Random useful lemmas (you might be getting to the point where you can
 guess the names of the lemmas):
 
 `subset_univ S : S ⊆ univ`
-
+`subset.trans : A ⊆ B → B ⊆ C → A ⊆ C`
 -/
 
-def comap (G : filter Y) : filter X :=
-{ sets := {S : set X | ∃ T : set Y, T ∈ G ∧ f ⁻¹' T ⊆ S},
+-- this is called filter.comap
+example (G : filter Y) : filter X :=
+{ sets := {S : set X | ∃ T ∈ G, f ⁻¹' T ⊆ S},
   univ_sets := begin
     use univ,
     split,
@@ -294,7 +352,80 @@ def comap (G : filter Y) : filter X :=
     exact ⟨hUS hxU, hVT hxV⟩, 
   end }
 
+-- Let's call this mem_comap
+lemma mem_comap (f : X → Y) (G : filter Y) (S : set X) :
+  S ∈ comap f G ↔ ∃ T ∈ G, f ⁻¹' T ⊆ S :=
+begin
+  -- true by definition
+  refl
+end
+
+-- If you want to, you can check some preliminary properties of `comap`. 
+
+-- this is comap_id
+example (G : filter Y) : comap id G = G :=
+begin
+  ext S,
+  rw mem_comap,
+  split,
+  { rintro ⟨T, hT, h⟩,
+    exact mem_sets_of_superset hT h,
+  },
+  { intro hS,
+    use [S, hS],
+    refl }
+end
+
+-- this is comap_comap but the other way around
+lemma comap_comp (H : filter Z) : comap (g ∘ f) H = comap f (comap g H) :=
+begin
+  ext S,
+  simp only [mem_comap],
+  split,
+  { rintro ⟨U, hU, h⟩,
+    use g ⁻¹' U,
+    refine ⟨_, h⟩,
+    rw mem_comap,
+    use [U, hU] },
+  { rintro ⟨T, ⟨U, hU, h2⟩, h⟩,
+    use [U, hU],
+    refine subset.trans _ h,
+    intros x hx,
+    exact h2 hx }
+end
+
+-- this is comap_principal. Remember `mem_principal_sets`!
+example (T : set Y) : comap f (𝓟 T) = 𝓟 (f ⁻¹' T) :=
+begin
+  ext S,
+--  rw mem_comap,
+--  rw mem_principal_sets,
+  split,
+  { rintro ⟨U, hU, h⟩,
+    refine subset.trans (λ x, _) h,
+    apply hU },
+  { intro h,
+    exact ⟨T, mem_principal_self T, h⟩ }
+end
 
 
-end xena
+-- This is the proof that `map f` and `comap f` are adjoint functors,
+-- or in other words form a Galois connection. It is the "generalised set"
+-- analogue of the assertion that if S is a subset of X and T is a subset of Y
+-- then f(S) ⊆ T ↔ S ⊆ f⁻¹(T), these both being ways to say that `f` restricts
+-- to a function from `S` to `T`.
+lemma filter.galois_connection (F : filter X) (G : filter Y) : 
+  map f F ≤ G ↔ F ≤ comap f G :=
+begin
+  split,
+  { rintro h S ⟨T, hT, hTS⟩,
+    rw le_def at h,
+    exact mem_sets_of_superset (h T hT) hTS },
+  { rintro h T hT,
+    rw le_def at h,
+    exact h (f ⁻¹' T) ⟨T, hT, subset.refl _⟩ },
+end
 
+-- indeed, `map f` and `comap f` form a Galois connection.
+example : galois_connection (map f) (comap f) :=
+filter.galois_connection X Y f 
