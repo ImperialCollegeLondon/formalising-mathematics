@@ -455,18 +455,18 @@ instance : has_add Z := ⟨add⟩
 
 -- auxiliary definition of multiplication: (a - b)*(c - d) = ac+bd-(ad+bc)
 def mul_aux (ab cd : N2) : Z :=
-⟦(ab.1 * cd.1 + ab.2 * cd.2, ab.2 * cd.2 + ab.2 * cd.1)⟧
+⟦(ab.1 * cd.1 + ab.2 * cd.2, ab.1 * cd.2 + ab.2 * cd.1)⟧
 
 -- useful for rewriting
 @[simp] lemma mul_aux_def (ab cd : N2) : mul_aux ab cd = 
-  ⟦(ab.1 * cd.1 + ab.2 * cd.2, ab.2 * cd.2 + ab.2 * cd.1)⟧ :=
+  ⟦(ab.1 * cd.1 + ab.2 * cd.2, ab.1 * cd.2 + ab.2 * cd.1)⟧ :=
 rfl -- true by def
 
-def mul : Z → Z → Z := quotient.lift₂ add_aux 
+def mul : Z → Z → Z := quotient.lift₂ mul_aux 
 begin
   rintros ⟨a, b⟩ ⟨c, d⟩ ⟨e, f⟩ ⟨g, h⟩ h1 h2,
   simp at *,
-  linarith,
+  nlinarith,
 end
 
 
