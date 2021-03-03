@@ -81,7 +81,8 @@ equivalence relation (a,b) ≈ (c,d) ↔ a + d = b + c
 
 -/
 
-def nat2 := ℕ × ℕ
+-- N2 is much easier to type than `ℕ × ℕ` 
+def N2 := ℕ × ℕ
 
 -- First I'll run you through the API for products `×`. 
 
@@ -96,7 +97,7 @@ Hover over `×` to find out how to type it.
 section product
 
 -- to make a term of a product, use round brackets.
-def foo : nat2 := (3,4)
+def foo : N2 := (3,4)
 
 -- To extract the first term of a product, use `.1` or `.fst`
 
@@ -116,28 +117,23 @@ example : foo.snd = 4 := rfl -- term mode reflexivity of equality
 
 -- The extensionality tactic works for products: a product is determined
 -- by the two parts used to make it.
-example (X : Type) (a b c d : X) (hac : a = c) (hbd : b = d) : (a,b) = (c,d) :=
+example (X : Type) (s t : X × X) (h1 : s.fst = t.fst) (h2 : s.snd = t.snd) :
+  s = t :=
 begin
   ext,
-  { dsimp only, -- tidy up
-    -- ⊢ a = c
-    exact hac },
-  { -- don't bother tidying up
-    exact hbd }
+  { exact h1 },
+  { exact h2 }
 end
 
 -- you can uses `cases x` on a product if you want to take it apart into
 -- its two pieces
-example (A B : Type) (x : A × B) (a : A) (b : B) (ha : a = x.1) (hb : b = x.2) : 
-  x = (a,b) :=
+example (A B : Type) (x : A × B) : x = (x.1, x.2) :=
 begin
-  cases x with c d,
-  -- one way to tidy up
-  dsimp only at ha, -- not actually needed
-  -- another way
-  change b = d at hb, -- also not needed
-  rw [ha, hb],
-  -- rw tries a sneaky `refl` and it works
+  -- note that this is not `refl` -- you have to take `x` apart. 
+  cases x with a b,
+  dsimp only, -- to tidy up
+  -- ⊢ (a, b) = (a, b)
+  refl,
 end
 
 end product
@@ -152,18 +148,18 @@ and `(c,d)` are sent to the same integer if and only if `a + d = b + c`.
 Conversely one could just define an equivalence relation on ℕ × ℕ
 by `x ≈ y ↔ x.1 + y.2 = x.2 + y.1` and then redefine ℤ -- or more
 precisely define a second ℤ -- to be the quotient
-by this equivalence relation. Let's call it `newint`.
+by this equivalence relation. Let's call it `Z`.
 
 -/
 
-namespace newint
+namespace N2
 
-def r (x y : nat2) : Prop :=
+def r (x y : N2) : Prop :=
 x.1 + y.2 = x.2 + y.1
 
 -- let's prove *two* "definitions" properties of `r`.
 -- The first uses packaged pairs and .1 and .2
-lemma r_def (x y : nat2) : r x y ↔ x.1 + y.2 = x.2 + y.1 :=
+lemma r_def (x y : N2) : r x y ↔ x.1 + y.2 = x.2 + y.1 :=
 begin
   refl
 end
@@ -173,8 +169,6 @@ lemma r_def' (a b c d : ℕ) : r (a,b) (c,d) ↔ a + d = b + c :=
 begin
   refl
 end
-
-
 
 def r_refl : reflexive r :=
 begin
@@ -186,7 +180,7 @@ begin
   apply add_comm,
 end
 
--- hint: 
+-- hint: `linarith` is good at linear arithmetic. 
 def r_symm : symmetric r :=
 begin
   rintros ⟨a, b⟩ ⟨c, d⟩ h,
@@ -198,16 +192,140 @@ def r_trans : transitive r :=
 begin
   rintros ⟨a, b⟩ ⟨c, d⟩ ⟨e, f⟩ h1 h2,
   rw r_def' at *,
-  hint,
   linarith,
 end
+
+-- now let's give N2 a setoid structure coming from `r`.
+-- In other words, we tell the type class inference system
+-- about `r`. Let's call it `setoid` and remember
+-- we're in the `N2` namespace, so its full name
+-- is N2.setoid
+instance setoid : setoid N2 := ⟨r, r_refl, r_symm, r_trans⟩
+
+-- Now we can use `≈` notation
+
+example (x y : N2) : x ≈ y ↔ r x y :=
+begin
+  -- true by definition
+  refl
+end
+
+end N2
+
+-- Now we can take the quotient!
+def Z := quotient N2.setoid
+
+-- And now we can finally start.
+
+-- The map from N2 to Z is called `quotient.mk`
+-- Recall `foo` is `(3,4)`
+
+def bar : Z := quotient.mk foo -- bar is the image of `foo` in the quotient.
+-- so it's morally -1.
+
+-- Notation for `quotient.mk x` is `⟦x⟧`
+example : bar = ⟦foo⟧ :=
+begin
+  refl
+end
+
+/-
+
+## Z
+
+We have a new type `Z` now, and a way of going from `N2`
+to `Z` (`quotient.mk`, with notation `⟦ ⟧`). 
+
+Here then are some things we can think about:
+
+(1) How to prove the universal property for `Z`?
+(2) How to put a ring structure on `Z`?
+(3) How to define a map from `Z` to Lean's `ℤ`, which
+is not defined as a quotient but also satisfies the
+universal property?
+
+Let's start with (1). The claim is that to give
+a map `Z → T` is to give a map `ℕ × ℕ → T`
+which is constant on equivalence classes. The
+construction: given a map `Z → T`, just
+compose with `quotient.mk : ℕ × ℕ → Z`. 
+To check that this map is constant on equivalence
+classes, we just need to prove `x ≈ y → ⟦x⟧ = ⟦y⟧`.
+
+-/
+
+example (x y : N2) : x ≈ y → ⟦x⟧ = ⟦y⟧ :=
+quotient.sound
+
+-- While we're here, the other direction is called `quotient.exact`
+
+example (x y : N2) : ⟦x⟧ = ⟦y⟧ → x ≈ y :=
+quotient.exact
+
+-- and the equivalence is called `quotient.eq` :
+
+example (x y : N2) : ⟦x⟧ = ⟦y⟧ ↔ x ≈ y :=
+quotient.eq
+
+-- So now we can define the map in one direction:
+
+variable {T : Type}
+
+def universal1 (g : Z → T) :
+  {f : N2 → T // ∀ x y : N2, x ≈ y → f x = f y} :=
+⟨λ n2, g ⟦n2⟧, begin
+  intros x y h,
+  rw ← quotient.eq at h,
+  rw h,
+end⟩
+
+-- To go the other way, we use a new function called `quotient.lift`.
+-- Note that this is a weird name for the construction, at least if your
+-- mental picture has the quotient underneath the type with the relation.
+-- But we're stuck with it.
+
+def universal2 (f : N2 → T) (hf : ∀ x y : N2, x ≈ y → f x = f y) :
+  Z → T :=
+quotient.lift f hf
+
+-- So now the big question is: how do we prove that these two constructions
+-- are inverse to each other? In other words, what is the API for `quotient.lift`?
+-- Let's start by showing how to get from f to g to f:
+
+example (f : N2 → T) (hf : ∀ x y : N2, x ≈ y → f x = f y) :
+  f = λ n2, quotient.lift f hf ⟦n2⟧ :=
+begin
+  -- true by definition!
+  refl
+end
+
+-- This is the reason quotients are defined as a black box; if we had
+-- defined them to be equivalence classes this would be true, but
+-- not by definition.
+
+-- To go the other way, the key thing to know is a function 
+-- called `quotient.induction_on`:
+
+example (g : Z → T) : g = quotient.lift (λ n2, g ⟦n2⟧) (universal1 g).2 :=
+begin
+  -- two functions are equal if they agree on all inputs
+  ext z,
+  -- now use `quotient.induction_on`
+  apply quotient.induction_on z,
+  -- and now we're in the situation of the above example again
+  intros,
+  -- so it's true by definition.
+  refl,
+end
+
+
+
+
 #exit
 
 TODO:
 
-⟦ ⟧
 lift
-≈ 
 
 1) equiv classes = quotients
 2) any surjection gives a quotient if you define the equiv reln right
