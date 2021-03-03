@@ -210,6 +210,16 @@ begin
   refl
 end
 
+-- `r x y` and `x ≈ y` are definitionally equal but not syntactically equal,
+-- rather annoyingly, so `r_def` and `r_def'` are no longer of much use to us.
+-- Let's make a new lemma which says the same thing with the new notation.
+-- Let's teach it to `simp`.
+
+@[simp] lemma equiv_def (x y : N2) : x ≈ y ↔ x.1 + y.2 = x.2 + y.1 :=
+begin
+  refl
+end
+
 end N2
 
 -- Now we can take the quotient!
@@ -245,24 +255,30 @@ is not defined as a quotient but also satisfies the
 universal property?
 
 Let's start with (1). The claim is that to give
-a map `Z → T` is to give a map `ℕ × ℕ → T`
+a map `Z → T` is to give a map `N2 → T`
 which is constant on equivalence classes. The
 construction: given a map `Z → T`, just
-compose with `quotient.mk : ℕ × ℕ → Z`. 
-To check that this map is constant on equivalence
-classes, we just need to prove `x ≈ y → ⟦x⟧ = ⟦y⟧`.
+compose with `quotient.mk : N2 → Z`.
+What do we need to prove here?
+
+First we need to prove that composing with `quotient.mk`
+gives us a map which is constant on equivalence classes!
+This follows from the statement that `quotient.mk` sends
+equivalent elements to equal elements. In other words,
+we need to prove `x ≈ y → ⟦x⟧ = ⟦y⟧`.
 
 -/
 
 example (x y : N2) : x ≈ y → ⟦x⟧ = ⟦y⟧ :=
 quotient.sound
 
--- While we're here, the other direction is called `quotient.exact`
+-- Of course we know the other implication is also true.
+-- This is called `quotient.exact`.
 
 example (x y : N2) : ⟦x⟧ = ⟦y⟧ → x ≈ y :=
 quotient.exact
 
--- and the equivalence is called `quotient.eq` :
+-- The iff statement (useful for rewrites) is called `quotient.eq` :
 
 example (x y : N2) : ⟦x⟧ = ⟦y⟧ ↔ x ≈ y :=
 quotient.eq
@@ -271,6 +287,8 @@ quotient.eq
 
 variable {T : Type}
 
+/- Given a map `g : Z → T`, make a function `f : N2 → T` which is
+   constant on equivalence classes. -/
 def universal1 (g : Z → T) :
   {f : N2 → T // ∀ x y : N2, x ≈ y → f x = f y} :=
 ⟨λ n2, g ⟦n2⟧, begin
@@ -284,13 +302,16 @@ end⟩
 -- mental picture has the quotient underneath the type with the relation.
 -- But we're stuck with it.
 
+/- Given a map `f : N2 → T` plus the assumption that it is constant on
+   equivalence classes, "lift" this map to a map `Z → T`. -/
 def universal2 (f : N2 → T) (hf : ∀ x y : N2, x ≈ y → f x = f y) :
   Z → T :=
 quotient.lift f hf
 
 -- So now the big question is: how do we prove that these two constructions
 -- are inverse to each other? In other words, what is the API for `quotient.lift`?
--- Let's start by showing how to get from f to g to f:
+-- Let's start by showing that going from `N2 → T` to `Z → T` and then
+-- back to `N2 → T` is the identity function.
 
 example (f : N2 → T) (hf : ∀ x y : N2, x ≈ y → f x = f y) :
   f = λ n2, quotient.lift f hf ⟦n2⟧ :=
@@ -318,7 +339,135 @@ begin
   refl,
 end
 
+/-
 
+## Giving Z a ring structure
+
+-/
+
+namespace Z -- so we are defining `Z.zero`, `Z.add` etc.
+
+open N2 -- so we can use `equiv_def` rather than `N2.equiv_def`
+
+/-
+
+### zero and one
+
+We start by giving `Z` a zero and a one.
+
+-/
+
+def zero : Z := ⟦(0, 0)⟧
+
+def one : Z := ⟦(1, 0)⟧
+
+-- We don't have the numeral notation yet though:
+
+-- #check (0 : Z) -- error about failing to find an instance of `has_zero Z`
+
+-- Let's use numeral notation `0` and `1` for `zero` and `one`.
+
+instance : has_zero Z := ⟨zero⟩
+instance : has_one Z := ⟨one⟩
+
+example : (0 : Z) = zero := rfl -- now works
+
+/-
+
+### negation
+
+Let's do negation next, by which I mean `-z`, because this is a function
+which only takes one input.
+
+Here is how a mathematician might describe defining negation on the
+equivalence classes of `ℕ × ℕ`. They might say this:
+
+1) choose an element `z` of the quotient `Z`.
+2) lift it randomly to a pair `(a, b)` of natural numbers.
+3) Define `-z` to be `⟦(b,a)⟧`
+4) Now let us check that this definition did not depend on the random lift in (2):
+   [and then they prove a lemma saying the construction is well-defined, i.e.
+    that if `(a, b) ~ (c,d)` then `⟦(b, a)⟧ = ⟦(d, c)⟧` ]
+
+This is the way mathematicians are taught. We will use *the same
+construction* in Lean but we will phrase it differently.
+
+1') Define an auxiliary map N2 → Z by sending `(a,b)` to `⟦(b,a)⟧`
+2') Now use `quotient.lift` to descend this to a map from `Z` to `Z`.
+3') We need to supply as an input to `quotient.lift` the theorem saying
+    that this map is constant on equivalence classes.
+    [and then we prove a lemma saying `(a, b) ~ (c, d) → ⟦(b, a)⟧ = ⟦(d, c)⟧`
+
+So as you can see, the mathematics is the same, but the emphasis is slightly
+different. 
+-/
+
+def neg_aux (xy : N2) : Z := ⟦(xy.2, xy.1)⟧
+
+-- useful for rewriting. Let's teach it to `simp`.
+@[simp] lemma neg_aux_def (xy : N2) : neg_aux xy = ⟦(xy.2, xy.1)⟧ := rfl
+  -- true by def
+
+def neg : Z → Z := quotient.lift neg_aux 
+begin
+  rintros ⟨a, b⟩ ⟨c, d⟩ h,
+  rw [neg_aux_def, neg_aux_def, quotient.eq],
+  rw equiv_def at *,
+  dsimp only at *,
+  exact h.symm, -- `h` has type `X = Y` so it has type `eq X Y`,
+  -- so `h.symm` means `eq.symm h`, and `eq.symm : X = Y → Y = X`
+end
+
+-- `-z` notation
+instance : has_neg Z := ⟨neg⟩
+/-
+
+## Addition and multiplication
+
+If we use `quotient.lift` for defining addition, we'd have to use it twice.
+We define `⟦(a, b)⟧ + ⟦(c, d)⟧ = ⟦(a + c, b + d)⟧` and would then have
+to check it was independent of the choice of lift `(a, b)` in one lemma,
+and then in a second proof check it was independent of the choice of `(c, d)`.
+The variant `quotient.lift₂` enables us to prove both results in one go. 
+It says that if `f : A → B → C` is a function which and `A` and `B`
+have equivalence relations on them, and `f` is constant on equivalence
+classes in both the `A` and the `B` variable, then `f` descends ("lifts")
+to a function `A/~ → B/~ → C`.
+-/
+
+-- auxiliary definition of addition 
+def add_aux (ab cd : N2) : Z := ⟦(ab.1 + cd.1, ab.2 + cd.2)⟧
+
+-- useful for rewriting
+@[simp] lemma add_aux_def (ab cd : N2) :
+  add_aux ab cd = ⟦(ab.1 + cd.1, ab.2 + cd.2)⟧ :=
+rfl -- true by def
+
+def add : Z → Z → Z := quotient.lift₂ add_aux 
+begin
+  rintros ⟨a, b⟩ ⟨c, d⟩ ⟨e, f⟩ ⟨g, h⟩ h1 h2,
+  simp only [add_aux_def, equiv_def, quotient.eq] at *,
+  linarith,
+end
+
+-- notation for addition
+instance : has_add Z := ⟨add⟩
+
+-- auxiliary definition of multiplication: (a - b)*(c - d) = ac+bd-(ad+bc)
+def mul_aux (ab cd : N2) : Z :=
+⟦(ab.1 * cd.1 + ab.2 * cd.2, ab.2 * cd.2 + ab.2 * cd.1)⟧
+
+-- useful for rewriting
+@[simp] lemma mul_aux_def (ab cd : N2) : mul_aux ab cd = 
+  ⟦(ab.1 * cd.1 + ab.2 * cd.2, ab.2 * cd.2 + ab.2 * cd.1)⟧ :=
+rfl -- true by def
+
+def mul : Z → Z → Z := quotient.lift₂ add_aux 
+begin
+  rintros ⟨a, b⟩ ⟨c, d⟩ ⟨e, f⟩ ⟨g, h⟩ h1 h2,
+  simp at *,
+  linarith,
+end
 
 
 #exit
