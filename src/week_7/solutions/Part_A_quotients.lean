@@ -82,7 +82,7 @@ equivalence relation (a,b) ≈ (c,d) ↔ a + d = b + c
 -/
 
 -- N2 is much easier to type than `ℕ × ℕ` 
-def N2 := ℕ × ℕ
+@[reducible] def N2 := ℕ × ℕ
 
 -- First I'll run you through the API for products `×`. 
 
@@ -370,7 +370,9 @@ def one : Z := ⟦(1, 0)⟧
 instance : has_zero Z := ⟨zero⟩
 instance : has_one Z := ⟨one⟩
 
-example : (0 : Z) = zero := rfl -- now works
+-- let's start to train the simplifier
+@[simp] lemma zero_def : (0 : Z) = ⟦(0, 0)⟧ := rfl -- now works 
+@[simp] lemma one_def : (1 : Z) = ⟦(1, 0)⟧ := rfl
 
 /-
 
@@ -420,9 +422,11 @@ end
 
 -- `-z` notation
 instance : has_neg Z := ⟨neg⟩
+
+@[simp] lemma neg_def (a b : ℕ) : (-⟦(a, b)⟧ : Z) = ⟦(b, a)⟧ := rfl
 /-
 
-## Addition and multiplication
+## Addition
 
 If we use `quotient.lift` for defining addition, we'd have to use it twice.
 We define `⟦(a, b)⟧ + ⟦(c, d)⟧ = ⟦(a + c, b + d)⟧` and would then have
@@ -453,6 +457,39 @@ end
 -- notation for addition
 instance : has_add Z := ⟨add⟩
 
+#check quotient.map
+
+@[simp] lemma add_def (a b c d : ℕ) : (⟦(a, b)⟧ + ⟦(c, d)⟧ : Z) = ⟦(a+c, b+d)⟧ := rfl
+
+/-
+
+## Z is a commutative group under addition
+
+-/
+
+def add_comm_group : add_comm_group Z :=
+{ zero := 0,
+  add := (+),
+  neg := has_neg.neg, -- there is no trick to use `-` because Lean confuses it with subtraction :-(
+  zero_add := begin
+    intro x,
+    apply quotient.induction_on x, clear x,
+    rintro ⟨a, b⟩,
+    simp only [zero_def, add_def],
+    sorry,
+--    refine quotient.induction_on a _,
+  end,
+  add_assoc := begin
+    intros a b c,
+    apply quotient.induction_on₃ a b c,
+    sorry,
+  end,
+  add_zero := _,
+  add_left_neg := _,
+  add_comm := _,
+}
+
+#exit
 -- auxiliary definition of multiplication: (a - b)*(c - d) = ac+bd-(ad+bc)
 def mul_aux (ab cd : N2) : Z :=
 ⟦(ab.1 * cd.1 + ab.2 * cd.2, ab.1 * cd.2 + ab.2 * cd.1)⟧
@@ -468,6 +505,25 @@ begin
   simp at *,
   nlinarith,
 end
+
+-- notation for multiplication
+instance : has_mul Z := ⟨mul⟩
+
+-- now let's prove that Z is a commutative ring!
+
+def comm_ring : comm_ring Z :=
+{ 
+  one := 1,
+
+  mul := (*),
+
+  mul_assoc := _,
+  one_mul := _,
+  mul_one := _,
+  left_distrib := _,
+  right_distrib := _,
+  mul_comm := _ }
+
 
 
 #exit
