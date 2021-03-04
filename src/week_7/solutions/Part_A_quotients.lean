@@ -599,6 +599,8 @@ def comm_ring : comm_ring Z :=
   ..add_comm_group
 }
 
+#check quotient.map
+
 #exit
 
 -- /-
