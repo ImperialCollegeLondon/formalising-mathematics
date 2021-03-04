@@ -2,13 +2,15 @@ import tactic
 
 /-
 
+# Further analysis of the universal property of quotients.
+
 Let `X` be a type with an equivalence relation on it.
 We say that a pair `Q` and `p : X → Q` is _universal_
 if `p` is constant on equivalence classes, and furthermore
 that `p` is "initial" for this property, which means that
 for all types `T` and for all functions `f : X → T` which
 are constant on equivalence classes, there's a unique `g : Q → T`
-such that `f = g ∘ p`.
+such that `f = g ∘ p`. Let's formalise this universal property in Lean.
 
 -/
 def is_universal {X : Type} [setoid X] (Q : Type) (p : X → Q) :=
@@ -53,7 +55,8 @@ lemma g_univ_spec (hu : is_universal Q p)
 /-
 
 And here's a variant which says that the functions take the same
-values everywhere. This is sometimes more convenient.
+values everywhere. This is sometimes more convenient. I prove it
+by applying `congr_fun` to the previous proof.
 
 -/
 
@@ -64,8 +67,9 @@ congr_fun (g_univ_spec hu h) x
 
 /-
 
-The proof that if `k : Q → T` satisfies `f = k ∘ p` then `k = g` also
-needs a convenient name -- let's call it `g_univ_unique hu h`.
+The proof of uniqueness of `g`, or more precisely that if `k : Q → T`
+satisfies `f = k ∘ p` then `k = g`, also needs a convenient name --
+let's call it `g_univ_unique hu h`.
 
 -/
 
@@ -77,7 +81,8 @@ lemma g_univ_unique (hu : is_universal Q p)
 /-
 
 Let's make a variant where the conclusion is that `k q = g q` for all `q`,
-other than just saying `k = g`.
+other than just saying `k = g`. Again we just apply `congr_fun` to the
+previous proof.
 
 -/
 
@@ -106,12 +111,16 @@ are unique up to isomorphism.
 
 
 -/
+
+-- Here's how to use `g_univ` to define functions between universal objects.
 noncomputable example {X : Type} [s : setoid X] {Q1 Q2 : Type}
   {p1 : X → Q1} {p2 : X → Q2}
   (h1 : is_universal Q1 p1) (h2 : is_universal Q2 p2) :
   Q1 → Q2 :=
   g_univ h1 h2.1
 
+-- Applying the universal property to `p : X → Q` gives us the
+-- identity function `id : Q → Q`
 lemma useful {X : Type} [s : setoid X] {Q : Type}
   {p : X → Q} (h1 : is_universal Q p) :
   g_univ h1 h1.1 = id :=
@@ -121,6 +130,7 @@ begin
   refl,
 end
 
+-- A variant of the previous lemma where we say `g q = q` rather than `g = id`
 lemma useful2 {X : Type} [s : setoid X] {Q : Type}
   {p : X → Q} (h1 : is_universal Q p) (q : Q) :
   g_univ h1 h1.1 q = q :=
@@ -129,6 +139,7 @@ begin
   refl
 end
 
+-- This is tricky. Ask if you need help.
 noncomputable def univ_equiv {X : Type} [s : setoid X] {Q1 Q2 : Type}
   {p1 : X → Q1} {p2 : X → Q2}
   (h1 : is_universal Q1 p1) (h2 : is_universal Q2 p2) :
@@ -154,11 +165,7 @@ noncomputable def univ_equiv {X : Type} [s : setoid X] {Q1 Q2 : Type}
     rw ← g_univ_spec' h1,    
   end }
 
-/-
-
-Lean's builtin quotients are universal
-
--/
+-- Lean's builtin quotients are universal
 theorem quotient_is_universal {X : Type} [s : setoid X] :
   is_universal (quotient s) quotient.mk :=
 begin
@@ -174,6 +181,7 @@ begin
     refl },
 end
 
+-- so any universal object is isomorphic to the quotient object.
 noncomputable def universal_equiv_quotient (X : Type) [s : setoid X]
   (Q : Type) (p : X → Q) (hu : is_universal Q p) :
 Q ≃ (quotient s) :=
