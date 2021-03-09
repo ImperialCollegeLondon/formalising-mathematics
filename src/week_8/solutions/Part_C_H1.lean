@@ -1,4 +1,5 @@
 import week_8.solutions.Part_B_H0
+import group_theory.quotient_group
 
 /-
 
@@ -50,10 +51,161 @@ these kinds of results could be turned into a research paper.
 Let's start with a definition of `H1 G M`
 -/
 
--- 1-cocycles
+-- 1-cocycles as an additive subgroup of the group `Hom(G,M)`
+-- a.k.a. `G → M` of functions from `G` to `M`, with group
+-- law induced from `M`.
+def Z1_subgroup (G M : Type)
+  [monoid G] [add_comm_group M] [distrib_mul_action G M] : add_subgroup (G → M) :=
+{ carrier := { f : G → M | ∀ (g h : G), f (g * h) = f g + g • f h },
+  zero_mem' := begin
+    -- the zero map is a cocycle
+    simp,
+  end,
+  add_mem' := begin
+    -- sum of two cocycles is a cocycle.
+    -- Note that the `abel` tactic is to additive abelian groups
+    -- what the `ring` tactic is to commutative semirings.
+    rintros c b hc hb g h,
+    simp [hc g h, hb g h],
+    abel,
+  end,
+  neg_mem' := begin
+    rintros c hc g h,
+    simp [hc g h],
+    abel,
+  end }
+
+-- promote this term to a type
 def Z1 (G M : Type)
   [monoid G] [add_comm_group M] [distrib_mul_action G M] : Type :=
-{m : M // ∀ g : G, g • m = m }
+{ f : G → M // ∀ (g h : G), f (g * h) = f g + g • f h }
+
+
+-- This is a definition so we need to make an API
+namespace Z1
+
+-- let G be a group (or a monoid) and let M be a G-module.
+variables {G M : Type}
+  [monoid G] [add_comm_group M] [distrib_mul_action G M]
+
+-- make the cocycles into a group
+instance : add_comm_group (Z1 G M) :=
+add_subgroup.to_add_comm_group (Z1_subgroup G M)
+
+-- add a coercion from a cocycle to the function G → M
+
+instance : has_coe_to_fun (Z1 G M) :=
+{ F := λ _, G → M,
+  coe := λ c, c.1 }
+
+@[simp] def coe_zero (g : G) : (0 : Z1 G M) g = 0 := rfl
+@[simp] def coe_add (a b : Z1 G M) (g : G) : (a + b) g = a g + b g := rfl
+@[simp] def coe_neg (a : Z1 G M) (g : G) : (-a) g = -(a g) := rfl
+
+end Z1
+
+-- now some stuff on coboundaries
+
+section B1 -- we'll put it in the root namespace
+
+variables {G M : Type}
+  [monoid G] [add_comm_group M] [distrib_mul_action G M]
+
+def is_coboundary (f : G → M) : Prop :=
+∃ m, ∀ g, f g = g • m - m 
+-- exercise: how do you think Lean works out the types of `g` and `m`
+-- in the above definition?
+-- Humans do it by correctly guessing `g : G` and `m : M`. Lean does it
+-- in another way -- what is it?
+
+-- useful for rewrites
+lemma is_coboundary_def (f : G → M) :
+  is_coboundary f ↔ ∃ m, ∀ g, f g = g • m - m :=
+-- true by definition
+iff.rfl
+
+def B1_subgroup (G M : Type) [monoid G] [add_comm_group M]
+  [distrib_mul_action G M] : add_subgroup (Z1 G M) :=
+{ carrier := {a | is_coboundary a },
+  zero_mem' := begin
+    use 0,
+    simp,
+  end,
+  add_mem' := begin
+    rintros a b ⟨m, hm⟩ ⟨n, hn⟩,
+    use m + n,
+    intro g,
+    simp [hm g, hn g],
+    abel,
+  end,
+  neg_mem' := begin
+    rintros a ⟨m, hm⟩,
+    use -m,
+    intro g,
+    simp [hm g],
+  end }
+
+end B1
+
+-- Lean has inbuilt quotients of additive abelian groups by subgroups
+@[derive add_comm_group] def H1 (G M : Type) [monoid G] [add_comm_group M]
+  [distrib_mul_action G M] : Type :=
+quotient_add_group.quotient (B1_subgroup G M)
+
+/-
+
+We have just defined `H1 G M` as a quotient group, and told Lean
+to figure out (or "derive") the obvious abelian group structure
+on it, which it did.
+
+What we need to do now is to show that if `φ : M →+[G] N` is a `G`-module
+hom then `φ` induces a map `H1 G M → H1 G N`. To prove this we will
+need to figure out how to define maps from and to quotient group structures.
+Just like last week, this is simply a matter of learning the API for the
+definition `quotient_add_group.quotient`. Here it is:
+
+*TODO* fill in
+
+Now let us make the definition.
+-/
+
+namespace distrib_mul_action_hom
+
+variables {G M N : Type}
+  [monoid G] [add_comm_group M] [add_comm_group N]
+  [distrib_mul_action G M] [distrib_mul_action G N]
+
+-- Let's first define the function `H1 G M → H1 G N` induced by `φ`.
+def H1_hom (φ : M →+[G] N) : H1 G M →+ H1 G N :=
+quotient_add_group.map (B1_subgroup G M) (B1_subgroup G N) _ _
+#exit
+-- up with a pair `b = ⟨b.1, b.2⟩` consisting of an element of `N` and
+-- a proof that it's `G`-invariant.
+-- Here's the element of `N`: just hit `a.1` with `φ` (coerced to a function) 
+⟨φ (a : M),
+-- and now you can do the proof that it's G-invariant. I would
+-- recommend starting with `cases a with m hm` to take the pair apart
+-- and then `dsimp` to get rid of all the `.val`s. 
+begin
+  cases a with m hm,
+  dsimp,
+  intro g,
+  rw [← φ.map_smul, hm]
+end⟩
+
+@[simp] lemma H0_hom.map_add (φ : M →+[G] N) (a b : H0 G M) :
+  H0_hom.to_fun φ (a + b) = H0_hom.to_fun φ a + H0_hom.to_fun φ b :=
+begin
+  unfold H0_hom.to_fun,
+  ext,
+  simp,
+end
+
+-- We can now define `H0_hom` as an add_group homomorphism.
+
+def H0_hom (φ : M →+[G] N) : H0 G M →+ H0 G N :=
+add_monoid_hom.mk' (H0_hom.to_fun φ) (H0_hom.map_add φ)
+
 
 #exit
 
