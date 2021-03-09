@@ -241,8 +241,14 @@ begin
     exact ⟨m, rfl⟩ },
   { rintro ⟨m, hm⟩,
     refine ⟨⟨m, _⟩, _⟩,
-  
-  },
+    { intro g,
+      apply hφ,
+      rw map_smul,
+      cases x with n hn,
+      rw hm,
+      exact hn g },
+    { ext,
+      exact hm } },
 end
 
 end distrib_mul_action_hom
