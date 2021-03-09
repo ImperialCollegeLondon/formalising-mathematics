@@ -116,15 +116,16 @@ end
 -- Let's tell the simplifier how the group structure (addition, 0, negation
 -- and subtraction) works with respect to the coercion.
 
-@[simp, norm_cast] lemma coe_add (a b : H0 G M) :
+@[simp] lemma coe_add (a b : H0 G M) :
   ((a + b : H0 G M) : M) = a + b := rfl
 
-@[simp, norm_cast] lemma coe_zero : ((0 : H0 G M) : M) = 0 := rfl
+@[simp] lemma coe_zero : ((0 : H0 G M) : M) = 0 := rfl
 
-@[simp, norm_cast] lemma coe_neg (a : H0 G M) :
+@[simp] lemma coe_neg (a : H0 G M) :
   ((-a : H0 G M) : M) = -a := rfl
 
-  @[simp, norm_cast] lemma coe_sub (a b : H0 G M) :
+-- we'll never use it but what the heck, others might
+@[simp] lemma coe_sub (a b : H0 G M) :
   ((a - b : H0 G M) : M) = a - b := rfl
 
 /-
@@ -144,44 +145,47 @@ variables {G M N : Type}
   [monoid G] [add_comm_group M] [add_comm_group N]
   [distrib_mul_action G M] [distrib_mul_action G N]
 
--- Let's first define the function `H0 G M → H0 G N` induced by `φ`.
-def H0_hom.to_fun (φ : M →+[G] N) (a : H0 G M) : H0 G N :=
--- Recall that `a` is a pair `a.1`, `a.2` with `a.1` an element of `M`
--- and `a.2` a proof that it's `G`-invariant. And we need to come
+-- Let's first define the group homomorphism `H0 G M →+ H0 G N` induced by `φ`.
+-- Recall that `a` is a pair `a.1`, `a.2` with `a.1 = (a : M)` an element
+-- of `M` and `a.2` a proof that it's `G`-invariant. And we need to come
 -- up with a pair `b = ⟨b.1, b.2⟩` consisting of an element of `N` and
--- a proof that it's `G`-invariant.
--- Here's the element of `N`: just hit `a.1` with `φ` (coerced to a function) 
-⟨φ a.1,
--- and now you can do the proof that it's G-invariant. I would
--- recommend starting with `cases a with m hm` to take the pair apart
--- and then `dsimp` to get rid of all the `.val`s. 
+-- a proof that it too is `G`-invariant, plus a proof that this
+-- construction commutes with addition.
+def H0_hom (φ : M →+[G] N) : H0 G M →+ H0 G N :=
+-- to make a group homomorphism we need to give a function and prove it 
+-- preserves addition. Here's the constructor which does this: 
+add_monoid_hom.mk'
+-- We now need a function `H0 G M → H0 G N`, so say `a : H0 G M`.
+-- Here's the element of `N`: just hit `a` (coerced to an element of `M`)
+-- with `φ` (coerced to a function from `M` to `N`). 
 begin
+  -- the map is just `φ`
+  refine (λ (a : H0 G M), (⟨φ a, _⟩ : H0 G N)),
+  -- but we have to prove that if a is G-invariant then so is φ a
+  -- in order to check this map is a well-defined map to `H0 G N`.
+  -- I would recommend starting with `cases a with m hm` to take the pair
+  -- apart and then `dsimp`.
   cases a with m hm,
-  dsimp,
   intro g,
-  rw [← φ.map_smul, hm]
-end⟩
-
-@[simp] lemma H0_hom.map_add (φ : M →+[G] N) (a b : H0 G M) :
-  H0_hom.to_fun φ (a + b) = H0_hom.to_fun φ a + H0_hom.to_fun φ b :=
+  dsimp,
+  rw [← φ.map_smul, hm],
+end
+-- and finally we need to prove that this map preserves addition.
 begin
-  unfold H0_hom.to_fun,
-  cases a, cases b,
+  intros a b,
   ext,
-  simp,
+  simp
 end
 
--- We can now define `H0_hom` as an add_group homomorphism.
+/-
+So now if `φ : M →+[G] N` is a G-module homomorphism, we can talk
+about `φ.H0_hom : H0 G M →+ H0 G N`, an abelian group homomorphism 
+from H⁰(G,M) to H⁰(G,N).
 
-def H0_hom (φ : M →+[G] N) : H0 G M →+ H0 G N :=
-add_monoid_hom.mk' (H0_hom.to_fun φ) (H0_hom.map_add φ)
+As ever, this is a definition so we need to make a little API.
+Here is a handy fact:
 
--- So now if `φ : M →+[G] N` is a G-module homomorphism, we can talk
--- about `φ.H0_hom : H0 G M →+ H0 G N`, an abelian group homomorphism 
--- from H⁰(G,M) to H⁰(G,N).
-
-
-/- Given a G-module map φ : M → N, The following diagram commutes:
+Given a G-module map `φ : M →+[G] N`, The following diagram commutes:
 
         φ.H0_hom
 H⁰(G,M) ---------> H⁰(G,N)
@@ -191,7 +195,7 @@ H⁰(G,M) ---------> H⁰(G,N)
   \/       φ          \/
   M ----------------> N
 -/
-@[simp] lemma H0_hom.coe_map (φ : M →+[G] N) (a : H0 G M) :
+@[simp] lemma H0_hom_coe_apply (φ : M →+[G] N) (a : H0 G M) :
 (↑(φ.H0_hom a) : N) = φ ↑a := rfl
 
 -- Let's prove H0_hom is functorial.
@@ -233,7 +237,7 @@ begin
   ext x,
   rw add_monoid_hom.mem_ker,
   rw [H0.ext_iff, H0.coe_zero],
-  rw H0_hom.coe_map,
+  rw H0_hom_coe_apply,
   unfold is_exact at he,
   rw he,
   split,
