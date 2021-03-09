@@ -104,6 +104,34 @@ instance : has_coe_to_fun (Z1 G M) :=
 
 end Z1
 
+namespace distrib_mul_action_hom
+
+-- The Z1 construction is functorial in the module `M`. Let's construct
+-- the relevant function, showing that if `φ : M →+[G] N` then
+-- composition induces an additive group homomorphism `Z1 G M → Z1 G N`
+
+variables {G M N : Type} [monoid G] 
+  [add_comm_group M] [distrib_mul_action G M]
+  [add_comm_group N] [distrib_mul_action G N]
+
+def Z1_hom (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
+-- to make a term of type `X →+ Y` from a function `f : X → Y` and
+-- a proof that it preserves addition we use the following constructor:
+add_monoid_hom.mk' 
+-- We now define the function
+begin
+  -- On functions `G → M` it's just composition with `φ`
+  refine (λ (f : Z1 G M), (⟨λ (g : G), φ (f g), _⟩ : Z1 G N)),
+  -- We need to prove this is well-defined, i.e. still a cocycle.
+  sorry
+end
+-- We now need to prove that it preserves addition
+begin
+  sorry
+end
+
+end distrib_mul_action_hom
+
 -- now some stuff on coboundaries
 
 section B1 -- we'll put it in the root namespace
@@ -177,7 +205,8 @@ variables {G M N : Type}
 
 -- Let's first define the function `H1 G M → H1 G N` induced by `φ`.
 def H1_hom (φ : M →+[G] N) : H1 G M →+ H1 G N :=
-quotient_add_group.map (B1_subgroup G M) (B1_subgroup G N) _ _
+quotient_add_group.map (B1_subgroup G M) (B1_subgroup G N) φ.Z1_hom sorry
+
 #exit
 -- up with a pair `b = ⟨b.1, b.2⟩` consisting of an element of `N` and
 -- a proof that it's `G`-invariant.

@@ -199,7 +199,7 @@ H⁰(G,M) ---------> H⁰(G,N)
 (↑(φ.H0_hom a) : N) = φ ↑a := rfl
 
 -- Let's prove H0_hom is functorial.
-
+-- or is this just a waste of their time?
 def H0_hom_id : H0_hom (distrib_mul_action_hom.id G : M →+[G] M) =
   add_monoid_hom.id _ :=
 begin
