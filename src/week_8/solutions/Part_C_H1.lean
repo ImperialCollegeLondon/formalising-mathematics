@@ -103,7 +103,8 @@ instance : has_coe_to_fun (Z1 G M) :=
 -- add a specification for the coercion
 
 lemma spec (a : Z1 G M) : ∀ (g h : G), a (g * h) = a g + g • a h :=
--- this is the last time we'll see this : we'll use `spec` from now on.
+-- this is the last time we'll see `a.cocycle_condition`: we'll 
+-- use `a.spec` from now on because it applies to `⇑a` and not `a.to_fun`.
 a.cocycle_condition
 
 -- add an extensionality lemma
@@ -160,11 +161,27 @@ begin
     zero := (0 : Z1 G M),
     neg := has_neg.neg,
     sub := has_sub.sub,
+    -- ignore this, we have to fill in this proof for technical reasons
     sub_eq_add_neg := λ _ _, rfl };
+  -- we now have five goals. Let's use the semicolon trick to work on 
+  -- all of them at once. I'll show you what happens to the proof
+  -- of associativity, the others are the same mutatis mutandis
+  -- (but harder to see)
+  -- *TODO* could documentstring commutativity and remark that 
+  -- they can see associativity using the cursor.
+  -- ⊢ ∀ (a b c : Z1 G M), a + b + c = a + (b + c)
   intros;
+  -- ⊢ a + b + c = a + (b + c)
   ext;
+  -- ⊢ ⇑(a + b + c) g = ⇑(a + (b + c)) g
   simp;
+  -- ⊢ ⇑a g + ⇑b g + ⇑c g = ⇑a g + (⇑b g + ⇑c g)
   abel
+  -- general additive abelian group tactic which solves
+  -- goals which are (absolute) identities in every abelian group.
+  -- Hypotheses are not looked at though. See Chris Hughes' forthcoming
+  -- Imperial MSc thesis for a new group theory tactic which is to `abel`
+  -- what `nlinarith` is to `ring`.
 end
 
 end Z1
@@ -185,14 +202,12 @@ def Z1_hom_underlying_function (φ : M →+[G] N) (f : Z1 G M) : Z1 G N :=
 ⟨λ g, φ (f g), begin
   -- need to prove that this function obtained by composing the cocycle
   -- f with the G-module homomorphism φ is also a cocycle.
-  intros g h,
-  rw ←φ.map_smul,
-  rw f.spec,
-  simp,
+  simp [←φ.map_smul, -map_smul, f.spec]
 end⟩
 
-lemma Z1_hom_underlying_function_spec (φ : M →+[G] N) (f : Z1 G M) (g : G) :
-  (Z1_hom_underlying_function φ f g : N) = φ (f g) := rfl
+@[norm_cast] 
+lemma Z1_hom_underlying_function_coe_comp (φ : M →+[G] N) (f : Z1 G M) (g : G) :
+  (Z1_hom_underlying_function φ f g : N) = φ (f g) := rfl--
 
 def Z1_hom (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
 -- to make a term of type `X →+ Y` (a group homomorphism) from a function
@@ -214,7 +229,7 @@ add_monoid_hom.mk'
 begin
   intros e f,
   ext g,
-  simp [φ.Z1_hom_underlying_function_spec],
+  simp [φ.Z1_hom_underlying_function_coe_comp],
 end
 
 --def Z1_hom_spec
