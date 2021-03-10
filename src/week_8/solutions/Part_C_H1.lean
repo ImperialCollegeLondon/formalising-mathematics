@@ -7,48 +7,55 @@ import group_theory.quotient_group
 
 We stick to the conventions that `G` is a group (or even
 a monoid, we never use inversion) and that `M` is a `G`-module,
-that is, an additive abelain group with a `G`-action.
+that is, an additive abelian group with a `G`-action.
 
-A 1-cocycle, or a twisted homomorphism, is a function
-`f : G → M` satisfying the axiom
+A key concept here is that of a cocycle, or a twisted homomorphism.
+These things were later renamed 1-cocycles when people realised that higher
+cocycles existed; today whenever I say "cocycle" I mean 1-cocycle).
+A cocycle is a function `f : G → M` satisfying the axiom
 `∀ (g h : G), f (g * h) = f g + g • f h`. These things
 naturally form an abelian group under pointwise addition
 and negation, by which I mean "operate on the target":
-`(f₁ + f₂) g = f₁ g + f₂ g`. We're not going to do higher
-cocycles today so let me just call these things cocycles.
+`(f₁ + f₂) g = f₁ g + f₂ g`.
 
 Let `Z1 G M` denote the abelian group of cocycles. 
 There is a subgroup `B1 G M` of coboundaries, consisting
 of the functions `f` for which there exists `m : M`
-such that `f g = g • m - m` (one easily checks that
-such functions are cocycles). The quotient group `H1 G M`,
-written `H¹(G,M)` by mathematicians, the main definition
-in this file. The first two theorems we shall prove about it here
+such that `f g = g • m - m` (note that it is at this point where we
+crucially use the fact that `M` is an abelian group and not just an abelian
+monoid). One easily checks that all coboundaries are cocycles, and that
+coboundaries are a subgroup (you will be doing this below). The
+quotient group `H1 G M`, written `H¹(G,M)` by mathematicians, is the main
+definition in this file. The first two theorems we shall prove about it here
 are that it is functorial (i.e. a map `φ : M →+[G] N` gives
 rise to a map `φ.H1_hom : H1 G M →+ H1 G N`), and exact in the
 middle (i.e. if `0 → A → B → C → 0` is a short exact sequence
 of `G`-modules then the sequence `H1 G A →+ H1 G B →+ H1 G C`
 is exact).
 
-The final boss of this course is verifying the first seven
-terms of the long exact sequence of group cohomology
-associated to a short exact sequence of groups, and this
-involves one final definition, namely the connecting map
-from `H0 G C` to `H1 G A` associated to a short exact
-sequence `0 → A → B → C → 0`. We define the map explicitly
-(there is a choice of sign) and make a small API for it.
+In Part D of this week's workshop we will define
+a boundary map `H0 G C →+ H1 H A` coming from a short
+exact sequence of `G`-modules. In this definition we make
+a choice of sign ("do we use `g b - b` or `b - g b`?"). 
+The final boss of this course
+is verifying the first seven terms of the long exact sequence
+of group cohomology associated to a short exact sequence of
+G-modules.
 
 Further work would be to verify "inf-res", otherwise known
 as the beginning of the long exact
 sequence of terms of low degree in the Hochschild-Serre
 spectral sequence for group cohomology (i.e.
-`0 → H¹(G/N, Aᴺ) → H¹(G, A) → H¹(N, A)` ) and of course to
-construct the Hochschild-Serre spectral sequence itself,
-which would involve defining group cohomology in all degrees
-rather than just degrees zero and one. I have no doubt that
-these kinds of results could be turned into a research paper.
+`0 → H¹(G/N, Aᴺ) → H¹(G, A) → H¹(N, A)` ) and of course one
+could go on to define n-cocycles and n-coboundaries (please
+get in touch if you're interested in doing this -- I have
+ideas about how to set it all up) and to
+construct the Hochschild-Serre spectral sequence itself.
+I have no doubt that these kinds of results could be turned
+into a research paper.
 
-Let's start with a definition of `H1 G M`
+Let's start with a definition of `H1 G M`. First we need
+to define cocycles and coboundaries. 
 -/
 
 -- 1-cocycles as an additive subgroup of the group `Hom(G,M)`
@@ -75,7 +82,7 @@ def Z1_subgroup (G M : Type)
     abel,
   end }
 
--- promote this term to a type
+-- Just like `H0 G M`, we promote this term to a type
 def Z1 (G M : Type)
   [monoid G] [add_comm_group M] [distrib_mul_action G M] : Type :=
 { f : G → M // ∀ (g h : G), f (g * h) = f g + g • f h }
@@ -93,10 +100,14 @@ instance : add_comm_group (Z1 G M) :=
 add_subgroup.to_add_comm_group (Z1_subgroup G M)
 
 -- add a coercion from a cocycle to the function G → M
-
 instance : has_coe_to_fun (Z1 G M) :=
 { F := λ _, G → M,
   coe := λ c, c.1 }
+
+-- and add the spec for this coercion
+lemma spec (f : Z1 G M) : ∀ (g h : G), f (g * h) = f g + g • f h := f.2
+
+-- We should now never need to use `f.1` and `f.2` again.
 
 @[simp] def coe_zero (g : G) : (0 : Z1 G M) g = 0 := rfl
 @[simp] def coe_add (a b : Z1 G M) (g : G) : (a + b) g = a g + b g := rfl
@@ -108,30 +119,52 @@ namespace distrib_mul_action_hom
 
 -- The Z1 construction is functorial in the module `M`. Let's construct
 -- the relevant function, showing that if `φ : M →+[G] N` then
--- composition induces an additive group homomorphism `Z1 G M → Z1 G N`
+-- composition induces an additive group homomorphism `Z1 G M → Z1 G N`.
+-- Just like `H0` we first define the auxiliary bare function, 
+-- and then beef it up to an abelian group homomorphism.
 
 variables {G M N : Type} [monoid G] 
   [add_comm_group M] [distrib_mul_action G M]
   [add_comm_group N] [distrib_mul_action G N]
 
-def Z1_hom (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
--- to make a term of type `X →+ Y` from a function `f : X → Y` and
--- a proof that it preserves addition we use the following constructor:
-add_monoid_hom.mk' 
--- We now define the function
-begin
-  -- On functions `G → M` it's just composition with `φ`
-  refine (λ (f : Z1 G M), (⟨λ (g : G), φ (f g), _⟩ : Z1 G N)),
-  -- We need to prove this is well-defined, i.e. still a cocycle.
+def Z1_hom_underlying_function (φ : M →+[G] N) (f : Z1 G M) : Z1 G N :=
+⟨λ g, φ (f g), begin
+  -- need to prove that this function obtained by composing the cocycle
+  -- f with the G-module homomorphism φ is also a cocycle.
   intros g h,
   rw ←φ.map_smul,
-  have hf := f.2,
+  rw f.spec,
   simp,
-  sorry
-end
--- We now need to prove that it preserves addition
+end⟩
+
+lemma Z1_hom_underlying_function_spec (φ : M →+[G] N) (f : Z1 G M) (g : G) :
+  (Z1_hom_underlying_function φ f g : N) = φ (f g) := rfl
+
+#check @Z1_hom_underlying_function_spec
+
+def Z1_hom (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
+-- to make a term of type `X →+ Y` (a group homomorphism) from a function
+-- `f : X → Y` and
+-- a proof that it preserves addition we use the following constructor:
+add_monoid_hom.mk' 
+-- We now throw in the bare function
+(Z1_hom_underlying_function φ)
+-- (or could try direct definition:)
+-- (λ f, ⟨λ g, φ (f g), begin
+--   -- need to prove that this function obtained by composing the cocycle
+--   -- f with the G-module homomorphism φ is also a cocycle.
+--   intros g h,
+--   rw ←φ.map_smul,
+--   rw f.spec,
+--   simp,
+-- end⟩)
+-- and now the proof that it preserves addition
 begin
-  sorry
+  intros e f,
+  ext g,
+  rw φ.Z1_hom_underlying_function_spec,
+  show φ ((e + f) g) = φ (e g) + φ (f g),
+  simp,
 end
 
 end distrib_mul_action_hom
