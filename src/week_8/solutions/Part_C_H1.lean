@@ -123,6 +123,10 @@ begin
   -- On functions `G → M` it's just composition with `φ`
   refine (λ (f : Z1 G M), (⟨λ (g : G), φ (f g), _⟩ : Z1 G N)),
   -- We need to prove this is well-defined, i.e. still a cocycle.
+  intros g h,
+  rw ←φ.map_smul,
+  have hf := f.2,
+  simp,
   sorry
 end
 -- We now need to prove that it preserves addition
