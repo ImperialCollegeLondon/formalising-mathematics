@@ -86,7 +86,7 @@ def Z1_subgroup (G M : Type)
 structure Z1 (G M : Type)
   [monoid G] [add_comm_group M] [distrib_mul_action G M] : Type :=
 (to_fun : G → M)
-(cocycle_condition : ∀ (g h : G), to_fun (g * h) = to_fun g + g • to_fun h)
+(is_cocycle : ∀ (g h : G), to_fun (g * h) = to_fun g + g • to_fun h)
 
 -- This is a definition so we need to make an API
 namespace Z1
@@ -100,12 +100,17 @@ instance : has_coe_to_fun (Z1 G M) :=
 { F := λ _, G → M,
   coe := to_fun }
 
+@[simp] lemma coe_apply (to_fun : G → M)
+  (is_cocycle : ∀ (g h : G), to_fun (g * h) = to_fun g + g • to_fun h) (g : G) :
+({ to_fun := to_fun, is_cocycle := is_cocycle } : Z1 G M) g = to_fun g := rfl
+
+
 -- add a specification for the coercion
 
 lemma spec (a : Z1 G M) : ∀ (g h : G), a (g * h) = a g + g • a h :=
--- this is the last time we'll see `a.cocycle_condition`: we'll 
+-- this is the last time we'll see `a.is_cocycle`: we'll 
 -- use `a.spec` from now on because it applies to `⇑a` and not `a.to_fun`.
-a.cocycle_condition
+a.is_cocycle
 
 -- add an extensionality lemma
 @[ext] lemma ext (a b : Z1 G M) (h : ∀ g, a g = b g) : a = b :=
@@ -115,7 +120,8 @@ end
 
 def add (a b : Z1 G M) : Z1 G M :=
 { to_fun := λ g, a g + b g,
-  cocycle_condition := begin
+  is_cocycle
+ := begin
     rintros g h,
     simp [a.spec, b.spec],
     abel,    
@@ -127,7 +133,8 @@ instance : has_add (Z1 G M) := ⟨add⟩
 
 def zero : Z1 G M := 
 { to_fun := λ g, 0,
-  cocycle_condition := begin
+  is_cocycle
+ := begin
     simp,
   end
 }
@@ -138,7 +145,8 @@ instance : has_zero (Z1 G M) := ⟨zero⟩
 
 def neg (a : Z1 G M) : Z1 G M :=
 { to_fun := λ g, -(a g),
-  cocycle_condition := begin
+  is_cocycle
+ := begin
     intros,
     simp [a.spec],
     abel,
@@ -209,7 +217,7 @@ end⟩
 lemma Z1_hom_underlying_function_coe_comp (φ : M →+[G] N) (f : Z1 G M) (g : G) :
   (Z1_hom_underlying_function φ f g : N) = φ (f g) := rfl--
 
-def Z1_hom (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
+def Z1 (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
 -- to make a term of type `X →+ Y` (a group homomorphism) from a function
 -- `f : X → Y` and
 -- a proof that it preserves addition we use the following constructor:
@@ -232,8 +240,11 @@ begin
   simp [φ.Z1_hom_underlying_function_coe_comp],
 end
 
---def Z1_hom_spec
+@[simp] lemma Z1_spec (φ : M →+[G] N) (a : _root_.Z1 G M) (g : G) : 
+  φ.Z1 a g = φ (a g) := rfl
 
+@[simp] lemma Z1_spec' (φ : M →+[G] N) (a : _root_.Z1 G M) (g : G) : 
+  (φ.Z1 a : G → N) = (φ ∘ a) := rfl
 end distrib_mul_action_hom
 
 -- now some stuff on coboundaries
@@ -278,13 +289,198 @@ def B1 (G M : Type) [monoid G] [add_comm_group M]
     simp [hm g],
   end }
 
+-- a useful lemma to have around
+lemma mem_B1 (a : Z1 G M) : a ∈ B1 G M ↔ ∃ (m : M), ∀ (g : G), a g = g • m - m := iff.rfl
+
 end B1
 
+section ab_B1andH1 -- we'll put it in the root namespace
+
+-- let's define abstract B1 to be the subtype of functions
+structure ab_B1 (G M : Type)
+  [monoid G] [add_comm_group M] [distrib_mul_action G M] :=
+(to_fun : G → M)
+(is_coboundary' : ∃ m : M, ∀ g : G, to_fun g = g • m - m)
+
+namespace ab_B1
+
+variables {G M : Type}
+  [monoid G] [add_comm_group M] [distrib_mul_action G M]
+
+instance : has_coe_to_fun (ab_B1 G M) :=
+⟨_, to_fun⟩
+
+@[simp] lemma coe_apply (to_fun : G → M)
+  (is_coboundary : ∃ m : M, ∀ g : G, to_fun g = g • m - m ) (g : G) :
+({ to_fun := to_fun, is_coboundary' := is_coboundary} : ab_B1 G M) g = to_fun g := rfl
+
+def is_coboundary (f : ab_B1 G M) : ∃ m : M, ∀ g : G, f g = g • m - m := f.2
+def spec (f : ab_B1 G M) : ∃ m : M, ∀ g : G, f g = g • m - m := f.2
+
+-- add an extensionality lemma
+@[ext] lemma ext (a b : ab_B1 G M) (h : ∀ g,  a g = b g) : a = b :=
+begin
+  cases a, cases b, simp, ext g, exact h g,
+end
+
+def add (a b : ab_B1 G M) : ab_B1 G M :=
+{ to_fun := λ g, a g + b g,
+  is_coboundary' := begin
+    cases a.is_coboundary with m hm,
+    cases b.is_coboundary with n hn,
+    use m + n,
+    intro g,
+    simp [hm, hn],
+    abel,
+  end }
+
+instance : has_add (ab_B1 G M) := ⟨add⟩
+
+@[simp] lemma coe_add (a b : ab_B1 G M) (g : G) : (a + b) g = a g + b g := rfl
+
+def zero : ab_B1 G M := 
+{ to_fun := λ g, 0,
+  is_coboundary' := begin
+    use 0,
+    simp,
+  end
+}
+
+instance : has_zero (ab_B1 G M) := ⟨zero⟩
+
+@[simp] lemma coe_zero (g : G) : (0 : ab_B1 G M) g = 0 := rfl
+
+def neg (a : ab_B1 G M) : ab_B1 G M :=
+{ to_fun := λ g, -(a g),
+  is_coboundary' := begin
+    intros,
+    cases a.is_coboundary with m hm,
+    use -m,
+    simp [a.spec, hm],
+  end
+}
+
+instance : has_neg (ab_B1 G M) := ⟨neg⟩
+
+@[simp] lemma coe_neg (a : ab_B1 G M) (g : G) : (-a) g = -(a g) := rfl
+
+def sub (a b : ab_B1 G M) : ab_B1 G M := a + -b
+
+instance : has_sub (ab_B1 G M) := ⟨sub⟩
+
+-- make the cocycles into a group
+instance : add_comm_group (ab_B1 G M) :=
+begin
+  refine_struct { 
+    add := (+),
+    zero := (0 : ab_B1 G M),
+    neg := has_neg.neg,
+    sub := has_sub.sub,
+    -- ignore this, we have to fill in this proof for technical reasons
+    sub_eq_add_neg := λ _ _, rfl };
+  -- we now have five goals. Let's use the semicolon trick to work on 
+  -- all of them at once. I'll show you what happens to the proof
+  -- of associativity, the others are the same mutatis mutandis
+  -- (but harder to see)
+  intros;
+  -- ⊢ a + b + c = a + (b + c)
+  ext;
+  -- ⊢ ⇑(a + b + c) g = ⇑(a + (b + c)) g
+  simp;
+  -- ⊢ ⇑a g + ⇑b g + ⇑c g = ⇑a g + (⇑b g + ⇑c g)
+  abel
+  -- general additive abelian group tactic which solves
+  -- goals which are (absolute) identities in every abelian group.
+  -- Hypotheses are not looked at though. See Chris Hughes' forthcoming
+  -- Imperial MSc thesis for a new group theory tactic which is to `abel`
+  -- what `nlinarith` is to `ring`.
+end
+
+end ab_B1
+
+namespace distrib_mul_action_hom
+
+variables {G M N : Type}
+  [monoid G] [add_comm_group M] [distrib_mul_action G M]
+  [add_comm_group N] [distrib_mul_action G N]
+
+-- def ab_B1 (φ : M →+[G] N) : ab_B1 G M →+ ab_B1 G N :=
+-- { to_fun := λ f, {to_fun := λ g, φ (f g), is_coboundary' := begin
+--   cases f.spec with m hm,
+--   use φ m,
+--   simp [hm], 
+-- end },
+--   map_zero' := begin
+--     ext,
+--     simp,
+--   end,
+--   map_add' := begin
+--     intros,
+--     ext,
+--     simp,
+--   end }
+
+end distrib_mul_action_hom
+
+section cochain_map
+
+variables (G M : Type) [monoid G] [add_comm_group M]
+  [distrib_mul_action G M] 
+
+def cochain_map : M →+ Z1 G M :=
+{ to_fun := λ m, { to_fun := λ g, g • m - m, is_cocycle := begin
+  simp [mul_smul, smul_sub],
+end},
+  map_zero' := begin
+    ext g,
+    simp,
+  end,
+  map_add' := begin
+    intros,
+    ext g,
+    simp,
+    abel,
+  end }
+
+@[simp] lemma cochain_map_apply (m : M) (g : G) :
+  cochain_map G M m g = g • m - m := rfl
+
+end cochain_map
+
+-- question : do we have cokernels? If A B are abelian groups and
+-- `f : A → B` is a group hom, how do I make the type coker f`
+
 -- Lean has inbuilt quotients of additive abelian groups by subgroups
-@[derive add_comm_group] def H1 (G M : Type) [monoid G] [add_comm_group M]
+@[derive add_comm_group]
+def H1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : Type :=
 quotient_add_group.quotient (B1 G M)
 
+@[derive add_comm_group] 
+def ab_H1 (G M : Type) [monoid G] [add_comm_group M]
+  [distrib_mul_action G M] : Type :=
+quotient_add_group.quotient ((cochain_map G M).range)
+--quotient_add_group.quotient (B1 G M)
+
+def Z1.quotient {G M : Type} [monoid G] [add_comm_group M]
+  [distrib_mul_action G M] : Z1 G M →+ ab_H1 G M :=
+quotient_add_group.mk' _
+
+namespace ab_H1
+
+variables {G M : Type} [monoid G] [add_comm_group M]
+  [distrib_mul_action G M] 
+
+
+
+@[elab_as_eliminator]
+def induction_on {p : ab_H1 G M → Prop} 
+  (IH : ∀ z : Z1 G M, p (z.quotient)) (h : ab_H1 G M) : p h :=
+quot.induction_on h IH
+
+end ab_H1
+
+end ab_B1andH1
 /-
 
 We have just defined `H1 G M` as a quotient group, and told Lean
@@ -304,34 +500,154 @@ Now let us make the definition.
 
 namespace distrib_mul_action_hom
 
+open add_subgroup
+
 variables {G M N : Type}
   [monoid G] [add_comm_group M] [add_comm_group N]
   [distrib_mul_action G M] [distrib_mul_action G N]
 
 -- Let's first define the function `H1 G M → H1 G N` induced by `φ`.
-def H1_hom (φ : M →+[G] N) : H1 G M →+ H1 G N :=
+def H1 (φ : M →+[G] N) : H1 G M →+ H1 G N :=
 -- We use `quotient_add_group.map` to define this map
 -- by saying that it is a descent of the map `φ.Z1_hom`
-quotient_add_group.map (B1 G M) (B1 G N) φ.Z1_hom
+quotient_add_group.map (B1 G M) (B1 G N) φ.Z1
 -- We now have to supply the proof that the map on cocycles induces
 -- a map on cohomology, i.e. that it sends coboundaries to coboundaries
 begin
   intros a ha,
-  rw add_subgroup.mem_comap,
-  -- I think I need an interface for B1
-  sorry
+  simp,
+  -- Now switch filter to only props.
+  -- OK let's look at this goal.
+  -- We have a hypothesis `ha`
+  -- which says "a is a coboundary"
+  -- and a goal that says that some function that you can
+  -- make from `a` and `φ`
+  -- It says that if `a` is a 1-boundary
+  -- from `G` to `M` then some one-cycle
+  -- from `G` to `N` made in some weird way
+  -- using `φ` is also a one-boundary
+  -- we still have some weird `.Z1_hom` thing
+  -- Does this have a spec?
+  -- that made progress. I can now start
+  -- to think about what this goal *says*.
+  -- ⇑(φ.Z1_hom) a ∈ B1 G N
+  -- it says that we have to prove that something
+  -- is a coboundary. Let's try rewriting `mem_B1`
+  -- to unfold the actual definition of `∈ B1 G N`
+  rw mem_B1 at ha ⊢, 
+  -- now it nearly all makes sense apart
+  -- from `φ.Z1_hom`, but we can rewrite thag
+  -- now under binders
+  simp_rw φ.Z1_spec, 
+  -- and now we can switch filter onto "only props"
+  -- which is true "maths mode"
+  
+
+  -- so now we're at the heart of the matter.
+  -- We have battled through the computer science
+  -- and now it's time for some mathematics.
+  -- It's getting better. Coercions are fine, don't
+  -- be scared of them, you do coercions in your 
+  -- head all the time, coercion just means
+  -- "forget the axioms and think about moving 
+  -- the actual data around"
+
+  -- If you are looking in VS Code then now is a really
+  -- good time to try the "filter"s in the Infoview.
+  -- Both filters  "no instances" and "only props"
+  -- are cool. One is just the pure logic problem,
+  -- the other is that and the types of the
+  -- terms involved. 
+  -- **TODO** why can't I highlight just 
+  -- `⇑(φ.Z1_hom)` in the infoview
+  -- This is the goal. 
+  cases ha with m hm,
+  use φ m,
+  simp [hm],
 end
 
-open function
-
-variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
--- the big theorem from this part
-theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
-  (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
-  φ.H1_hom.range = ψ.H1_hom.ker :=
+def ab_H1 (φ : M →+[G] N) : ab_H1 G M →+ ab_H1 G N :=
+-- We use `quotient_add_group.map` to define this map
+-- by saying that it is a descent of the map `φ.Z1_hom`
+quotient_add_group.map ((cochain_map G M).range) ((cochain_map G N).range)
+  φ.Z1
+-- We now have to supply the proof that the map on cocycles induces
+-- a map on cohomology, i.e. that it sends coboundaries to coboundaries
 begin
-  sorry
+  rintro ⟨c, hc⟩ ⟨m, hm⟩,
+  use φ m,
+  ext g,
+  simp [← hm],
 end
 
 end distrib_mul_action_hom
+
+section exactness
+
+variables {G M N P : Type}
+  [monoid G]
+  [add_comm_group M] [distrib_mul_action G M] 
+  [add_comm_group N] [distrib_mul_action G N]
+  [add_comm_group P] [distrib_mul_action G P]
+(φ : M →+[G] N)
+
+open function
+
+open add_monoid_hom
+
+-- the big theorem from this part
+-- original H1 version
+theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
+  (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
+  φ.H1.range = ψ.H1.ker :=
+begin
+  -- need to prove a range is a kernel,
+  ext k,
+  -- let k be a cohomology class, an element of H^1(G,N).
+  -- we're supposed to be proving that we're in a range
+  -- if and only if we're in a kernel
+  -- I tried `simp` and it didn't simplify
+  -- the `k ∈ kernel of some map` so
+  -- I tried again and told `simp` to use it:
+  simp [mem_ker],
+  -- well the "exists" goal is problematic,
+  -- but we could still work on what it means
+  -- for `H1_ψ(k)` to be zero. It means
+  -- that a certain function is a coboundary.
+  -- φ.H1 (⟦xtilde : Z1 G M⟧) = ⟦φ.Z1 xtilde : Z1 G N⟧  
+  -- I can't see how to go further so I'm going to split
+  split,
+  { rintro ⟨x, rfl⟩,
+    apply quot.induction_on x, clear x,
+    -- this is the oriinal H1 version
+    -- now I should be able to rewrite
+    sorry,
+  },
+  { sorry }
+end
+
+#check ab_H1.induction_on
+
+-- the big theorem from this part
+-- ab_H1 version
+theorem ab_H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
+  (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
+  φ.ab_H1.range = ψ.ab_H1.ker :=
+begin
+  -- need to prove a range is a kernel,
+  ext k,
+  -- let k be a cohomology class, an element of H^1(G,N).
+  -- we're supposed to be proving that we're in a range
+  -- if and only if we're in a kernel
+  -- I can't see how to do it directly with rewrites
+  -- so I'm going to split
+  split,
+  { rintro ⟨x, rfl⟩,
+    refine x.induction_on _,
+    intros z,
+    
+  },
+  { sorry }
+end
+
 
