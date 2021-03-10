@@ -296,6 +296,7 @@ end B1
 
 section ab_B1andH1 -- we'll put it in the root namespace
 
+-- I think we can delete ab_B1, I never used it?
 -- let's define abstract B1 to be the subtype of functions
 structure ab_B1 (G M : Type)
   [monoid G] [add_comm_group M] [distrib_mul_action G M] :=
@@ -589,7 +590,15 @@ variables {G M N P : Type}
   [add_comm_group M] [distrib_mul_action G M] 
   [add_comm_group N] [distrib_mul_action G N]
   [add_comm_group P] [distrib_mul_action G P]
-(φ : M →+[G] N)
+(φ : M →+[G] N) (z : Z1 G M)
+
+example (α β : Type) [setoid α] [setoid β]
+  (f : α → β) (h : (has_equiv.equiv ⇒ has_equiv.equiv) f f) (a : α) : 
+  quotient.map f h (⟦a⟧) = ⟦f a⟧ := quotient.map_mk f h a
+
+lemma Z1.ab_H1_map_mk (φ : M →+[G] N) : φ.ab_H1 (z.quotient) = 
+  (φ.Z1 z).quotient :=
+rfl
 
 open function
 
@@ -626,8 +635,6 @@ begin
   { sorry }
 end
 
-#check ab_H1.induction_on
-
 -- the big theorem from this part
 -- ab_H1 version
 theorem ab_H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
@@ -645,9 +652,12 @@ begin
   { rintro ⟨x, rfl⟩,
     refine x.induction_on _,
     intros z,
-    
+    -- should have some map commutes lemma
+    rw Z1.ab_H1_map_mk,
+    sorry
   },
   { sorry }
 end
 
+end exactness
 
