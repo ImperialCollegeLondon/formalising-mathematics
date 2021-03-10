@@ -5,7 +5,7 @@ import week_8.solutions.Part_A_G_modules
 # H⁰(G,M)
 
 If G is a group and M is a G-module then H⁰(G,M) is the abelian group
-of G-invariant elements of `M`. 
+of G-invariant elements of `M`. Let's define it first as a subgroup of `M`.
 
 -/
 
@@ -27,12 +27,16 @@ def H0_subgroup (G M : Type)
 
 /-
 
-This makes `H0_submonoid G M`, a term (an additive subgroup of `M`, and
-hence a term of type `add_subgroup M`). But we want to consider it as a type
-in its own right. So let's beef it up.
+This makes `H0_subgroup G M`, a term (an additive subgroup of `M`, and
+hence a term of type `add_subgroup M`). But this is no good -- we want
+to consider functions `H⁰(G,M) → H⁰(G,N)` so we need a *type* `H0 G M`.
+We need to promote the term to a type. We do this by using Lean's
+theory of subtypes, with notation `{ x // P x }` as oppposed to 
+the set-theoretic `{ x | P x }`. 
 
 -/
 
+/-- Group cohomology `H⁰(G,M)` as a type. -/
 def H0 (G M : Type)
   [monoid G] [add_comm_group M] [distrib_mul_action G M] : Type :=
 {m : M // ∀ g : G, g • m = m }
@@ -42,21 +46,18 @@ def H0 (G M : Type)
 own right.
 
 So how does this work? A term `a` of type `H0 G M` is a *pair* consisting
-of a term `m : M` and a proof `hm : ∀ g, g • m = m`. Remember the following
-important things:
+of a term `m : M` and a proof `hm : ∀ g, g • m = m`. If you want to be
+all "computer sciency" you can access the elements of this pair as
+follows: `m` is just `a.1` or `a.val`, and `hm` is just `a.2`. 
 
-`H0 G M` is a type, and if `a` is a term of this type, then `a` is not
-a term of type `M`, it is a *pair*. The term of type `M` is called `a.val`
-or `a.1`. The other term `a.2` of the pair is the *proof* that `a.1` is
-G-invariant, i.e `a.2 : ∀ g, g • a.1 = a.1`. 
-
-If you want to take `a` apart into its pieces `m` and `hm` then you
-can do `cases a with m hm`. If there are still things like `⟨m, hm⟩.val`
-left, you can get rid of them with `dsimp only`.
+I regard such vulgar computerscienceisms like `a.2` as "breaking the
+interface". This is not how mathematicians think of things. We are
+going to fix this by setting up another coercion, to be instead of `a.1`,
+and writing a small API (one function) to be used instead of `a.2`. 
 
 -/
 
--- let's make and prove stuff about `H0 G M` in the `H0` namespace.
+-- let's make an API and prove stuff about `H0 G M` in the `H0` namespace.
 namespace H0
 
 -- let `G` be a group (or a monoid) and let `M` be a `G`-module.
@@ -75,12 +76,14 @@ to use. Things we do here:
 * We want to be able to pass easily between terms of type `H0 G M`
   and terms of type `M`, so we set up a coercion.
 
+* We want easy access to the proof that an element of `H0 G M` is
+  G-invariant, and we can do this using dot notation `a.spec`.
+
 * We want to know that two terms of type `H0 G M` are equal if
   and only if the corresponding terms of type `M` are equal.
 
 * We want to know that things like 0 and addition coincide in `M`
   and `H0 G M`.
-
 
 
 Let's start by making H⁰(G, M) a.k.a. `H0 G M` into a group. This is easy
@@ -93,9 +96,8 @@ instance : add_comm_group (H0 G M) :=
 add_subgroup.to_add_comm_group (H0_subgroup G M)
 
 -- Now let's set up the coercion from `H0 G M` to `M`, which means
--- that if we have a term `a : H0 G M` then, remembering that `a`
--- is actually a pair consisting of `a.val : M` and `a.2 : ∀ g, g • m = m`,
--- we want to be able to write `(a : M)` to mean `a.val : M`. 
+-- that if we have a term `a : H0 G M` then we will just be able to write
+-- `a : M` to refer to the underlying element `m = a.val` of `M`.
 
 instance : has_coe (H0 G M) M :=  ⟨λ a, a.val⟩ 
 
@@ -104,6 +106,18 @@ instance : has_coe (H0 G M) M :=  ⟨λ a, a.val⟩
 
 @[simp] lemma coe_def (m : M) (hm : ∀(g : G), g • m = m) :
   ((⟨m, hm⟩ : H0 G M) : M) = m := rfl
+
+-- We want to be able to have easy access to the assertion that if `a : H0 G M`
+-- then the coerced `↑a : M` is `G`-invariant.
+
+-- this is our nice interface
+lemma spec (a : H0 G M) : ∀ (g : G), g • (a : M) = a :=
+-- this is something we will now never see again
+a.2
+
+-- The idea now is that we should avoid `a.1` and `a.2` completely,
+-- and use `a : M` or `↑a` for the element of the module, and `a.spec` for
+-- the proof that it is `G`-invariant.
 
 -- Let's now prove some useful ext lemmas:
 lemma ext_iff (a b : H0 G M) : a = b ↔ (a : M) = b := 
@@ -146,32 +160,31 @@ variables {G M N : Type}
   [distrib_mul_action G M] [distrib_mul_action G N]
 
 -- Let's first define the group homomorphism `H0 G M →+ H0 G N` induced by `φ`.
--- Recall that `a` is a pair `a.1`, `a.2` with `a.1 = (a : M)` an element
--- of `M` and `a.2` a proof that it's `G`-invariant. And we need to come
--- up with a pair `b = ⟨b.1, b.2⟩` consisting of an element of `N` and
--- a proof that it too is `G`-invariant, plus a proof that this
--- construction commutes with addition.
-def H0_hom (φ : M →+[G] N) : H0 G M →+ H0 G N :=
--- to make a group homomorphism we need to give a function and prove it 
--- preserves addition. Here's the constructor which does this: 
-add_monoid_hom.mk'
--- We now need a function `H0 G M → H0 G N`, so say `a : H0 G M`.
--- Here's the element of `N`: just hit `a` (coerced to an element of `M`)
--- with `φ` (coerced to a function from `M` to `N`). 
-begin
-  -- the map is just `φ`
-  refine (λ (a : H0 G M), (⟨φ a, _⟩ : H0 G N)),
-  -- but we have to prove that if a is G-invariant then so is φ a
-  -- in order to check this map is a well-defined map to `H0 G N`.
-  -- I would recommend starting with `cases a with m hm` to take the pair
-  -- apart and then `dsimp`.
-  cases a with m hm,
+-- Recall that the constructor of `H0 G N` needs as input a pair consisting
+-- of `n : N` and `hn : ∀ g, g • n = n`, and we make the element of `H0 G N`
+-- using the `⟨n, hn⟩` notation.
+
+/- The function underlying the group homomorphism `H⁰(G,M) → H⁰(G,N)`
+   induced by a `G`-equivariant group homomorphism `φ : M →+[G] N` -/
+def H0_hom_underlying_function (φ : M →+[G] N) (a : H0 G M) : H0 G N :=
+⟨φ a, begin
+  -- use φ.map_smul and a.spec to solve this goal. Remember that
+  -- `rw` doesn't work under binders, and ∀ is a binder.
   intro g,
-  dsimp,
-  rw [← φ.map_smul, hm],
-end
--- and finally we need to prove that this map preserves addition.
+  rw ←φ.map_smul,
+  rw a.spec,
+end⟩
+
+/-- The group homomorphism  `H⁰(G,M) →+ H⁰(G,N)`
+   induced by a `G`-equivariant group homomorphism `φ : M →+[G] N` -/
+def H0_hom (φ : M →+[G] N) : H0 G M →+ H0 G N :=
+-- to make a group homomorphism we need apply a constructor
+add_monoid_hom.mk'
+-- to the function we just made
+(H0_hom_underlying_function φ)
+-- and then prove that this function preserves addition.
 begin
+  unfold H0_hom_underlying_function,
   intros a b,
   ext,
   simp
@@ -227,7 +240,9 @@ begin
   ext, 
   apply hφ,
   rw H0.ext_iff at h,
-  simpa
+  -- next line not necessary as the proof of H0_hom_coe_apply is `rfl`
+  rw [H0_hom_coe_apply, H0_hom_coe_apply] at h,
+  exact h,
 end
 
 theorem H0_hom.middle_exact (φ : M →+[G] N) (hφ : injective φ)
@@ -238,21 +253,26 @@ begin
   rw add_monoid_hom.mem_ker,
   rw [H0.ext_iff, H0.coe_zero],
   rw H0_hom_coe_apply,
-  unfold is_exact at he,
+  rw is_exact_def at he,
   rw he,
+  rw add_monoid_hom.mem_range,
   split,
-  { rintro ⟨⟨m, hm⟩, rfl⟩,
-    exact ⟨m, rfl⟩ },
-  { rintro ⟨m, hm⟩,
-    refine ⟨⟨m, _⟩, _⟩,
+  { rintro ⟨a, rfl⟩,
+    exact ⟨a, rfl⟩ },
+  { rintro ⟨m, hmx⟩,
+    -- I claim `m` is G-invariant
+    have hm : ∀ (g : G), g • m = m,
     { intro g,
       apply hφ,
-      rw map_smul,
-      cases x with n hn,
-      rw hm,
-      exact hn g },
-    { ext,
-      exact hm } },
+      rw [φ.map_smul, hmx],
+      apply x.spec },
+    let a : H0 G M := ⟨m, hm⟩,
+    have ha : (a : M) = m := rfl,
+    use a,
+    ext,
+    -- next line not necessary as both proofs are `rfl`
+    rw [H0_hom_coe_apply, ha],
+    exact hmx },
 end
 
 end distrib_mul_action_hom
