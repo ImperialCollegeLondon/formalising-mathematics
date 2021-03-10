@@ -83,10 +83,10 @@ def Z1_subgroup (G M : Type)
   end }
 
 -- Just like `H0 G M`, we promote this term to a type
-def Z1 (G M : Type)
+structure Z1 (G M : Type)
   [monoid G] [add_comm_group M] [distrib_mul_action G M] : Type :=
-{ f : G → M // ∀ (g h : G), f (g * h) = f g + g • f h }
-
+(to_fun : G → M)
+(cocycle_condition : ∀ (g h : G), to_fun (g * h) = to_fun g + g • to_fun h)
 
 -- This is a definition so we need to make an API
 namespace Z1
@@ -95,23 +95,77 @@ namespace Z1
 variables {G M : Type}
   [monoid G] [add_comm_group M] [distrib_mul_action G M]
 
--- make the cocycles into a group
-instance : add_comm_group (Z1 G M) :=
-add_subgroup.to_add_comm_group (Z1_subgroup G M)
-
 -- add a coercion from a cocycle to the function G → M
 instance : has_coe_to_fun (Z1 G M) :=
 { F := λ _, G → M,
-  coe := λ c, c.1 }
+  coe := to_fun }
 
--- and add the spec for this coercion
-lemma spec (f : Z1 G M) : ∀ (g h : G), f (g * h) = f g + g • f h := f.2
+-- add a specification for the coercion
 
--- We should now never need to use `f.1` and `f.2` again.
+lemma spec (a : Z1 G M) : ∀ (g h : G), a (g * h) = a g + g • a h :=
+-- this is the last time we'll see this : we'll use `spec` from now on.
+a.cocycle_condition
 
-@[simp] def coe_zero (g : G) : (0 : Z1 G M) g = 0 := rfl
-@[simp] def coe_add (a b : Z1 G M) (g : G) : (a + b) g = a g + b g := rfl
-@[simp] def coe_neg (a : Z1 G M) (g : G) : (-a) g = -(a g) := rfl
+-- add an extensionality lemma
+@[ext] lemma ext (a b : Z1 G M) (h : ∀ g, a g = b g) : a = b :=
+begin
+  cases a, cases b, simp, ext g, exact h g,
+end
+
+def add (a b : Z1 G M) : Z1 G M :=
+{ to_fun := λ g, a g + b g,
+  cocycle_condition := begin
+    rintros g h,
+    simp [a.spec, b.spec],
+    abel,    
+  end }
+
+instance : has_add (Z1 G M) := ⟨add⟩
+
+@[simp] lemma coe_add (a b : Z1 G M) (g : G) : (a + b) g = a g + b g := rfl
+
+def zero : Z1 G M := 
+{ to_fun := λ g, 0,
+  cocycle_condition := begin
+    simp,
+  end
+}
+
+instance : has_zero (Z1 G M) := ⟨zero⟩
+
+@[simp] lemma coe_zero (g : G) : (0 : Z1 G M) g = 0 := rfl
+
+def neg (a : Z1 G M) : Z1 G M :=
+{ to_fun := λ g, -(a g),
+  cocycle_condition := begin
+    intros,
+    simp [a.spec],
+    abel,
+  end
+}
+
+instance : has_neg (Z1 G M) := ⟨neg⟩
+
+@[simp] lemma coe_neg (a : Z1 G M) (g : G) : (-a) g = -(a g) := rfl
+
+def sub (a b : Z1 G M) : Z1 G M := a + -b
+
+instance : has_sub (Z1 G M) := ⟨sub⟩
+
+-- make the cocycles into a group
+instance : add_comm_group (Z1 G M) :=
+begin
+  refine_struct { 
+    add := (+),
+    zero := (0 : Z1 G M),
+    neg := has_neg.neg,
+    sub := has_sub.sub,
+    sub_eq_add_neg := λ _ _, rfl };
+  intros;
+  ext;
+  simp;
+  abel
+end
 
 end Z1
 
@@ -140,8 +194,6 @@ end⟩
 lemma Z1_hom_underlying_function_spec (φ : M →+[G] N) (f : Z1 G M) (g : G) :
   (Z1_hom_underlying_function φ f g : N) = φ (f g) := rfl
 
-#check @Z1_hom_underlying_function_spec
-
 def Z1_hom (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
 -- to make a term of type `X →+ Y` (a group homomorphism) from a function
 -- `f : X → Y` and
@@ -162,10 +214,10 @@ add_monoid_hom.mk'
 begin
   intros e f,
   ext g,
-  rw φ.Z1_hom_underlying_function_spec,
-  show φ ((e + f) g) = φ (e g) + φ (f g),
-  simp,
+  simp [φ.Z1_hom_underlying_function_spec],
 end
+
+--def Z1_hom_spec
 
 end distrib_mul_action_hom
 
@@ -189,7 +241,8 @@ lemma is_coboundary_def (f : G → M) :
 -- true by definition
 iff.rfl
 
-def B1_subgroup (G M : Type) [monoid G] [add_comm_group M]
+-- let's define `B1 G M` as a subgroup of `Z1 G M`.
+def B1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : add_subgroup (Z1 G M) :=
 { carrier := {a | is_coboundary a },
   zero_mem' := begin
@@ -215,7 +268,7 @@ end B1
 -- Lean has inbuilt quotients of additive abelian groups by subgroups
 @[derive add_comm_group] def H1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : Type :=
-quotient_add_group.quotient (B1_subgroup G M)
+quotient_add_group.quotient (B1 G M)
 
 /-
 
@@ -242,49 +295,28 @@ variables {G M N : Type}
 
 -- Let's first define the function `H1 G M → H1 G N` induced by `φ`.
 def H1_hom (φ : M →+[G] N) : H1 G M →+ H1 G N :=
-quotient_add_group.map (B1_subgroup G M) (B1_subgroup G N) φ.Z1_hom sorry
-
-#exit
--- up with a pair `b = ⟨b.1, b.2⟩` consisting of an element of `N` and
--- a proof that it's `G`-invariant.
--- Here's the element of `N`: just hit `a.1` with `φ` (coerced to a function) 
-⟨φ (a : M),
--- and now you can do the proof that it's G-invariant. I would
--- recommend starting with `cases a with m hm` to take the pair apart
--- and then `dsimp` to get rid of all the `.val`s. 
+-- We use `quotient_add_group.map` to define this map
+-- by saying that it is a descent of the map `φ.Z1_hom`
+quotient_add_group.map (B1 G M) (B1 G N) φ.Z1_hom
+-- We now have to supply the proof that the map on cocycles induces
+-- a map on cohomology, i.e. that it sends coboundaries to coboundaries
 begin
-  cases a with m hm,
-  dsimp,
-  intro g,
-  rw [← φ.map_smul, hm]
-end⟩
-
-@[simp] lemma H0_hom.map_add (φ : M →+[G] N) (a b : H0 G M) :
-  H0_hom.to_fun φ (a + b) = H0_hom.to_fun φ a + H0_hom.to_fun φ b :=
-begin
-  unfold H0_hom.to_fun,
-  ext,
-  simp,
+  intros a ha,
+  rw add_subgroup.mem_comap,
+  -- I think I need an interface for B1
+  sorry
 end
 
--- We can now define `H0_hom` as an add_group homomorphism.
+open function
 
-def H0_hom (φ : M →+[G] N) : H0 G M →+ H0 G N :=
-add_monoid_hom.mk' (H0_hom.to_fun φ) (H0_hom.map_add φ)
+variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
+-- the big theorem from this part
+theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
+  (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
+  φ.H1_hom.range = ψ.H1_hom.ker :=
+begin
+  sorry
+end
 
+end distrib_mul_action_hom
 
-#exit
-
-To do
-
-H1 def
-
-H1 exact in the middle
-
-boundary map def
-
-boundary map API
-
-7 term exact sequnce
-
-inf-res
