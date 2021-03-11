@@ -19,9 +19,9 @@ will help for some of the harder problems in this workshop.
 
 # Lofty goals
 
-* Definitions of `H0 G M` and `H1 G M` (the latter as 1-cocycles `Z1 G M` modulo 1-boundaries)
+[*] Definitions of `H0 G M` and `H1 G M` (the latter as 1-cocycles `Z1 G M` modulo 1-boundaries)
 
-* G-module hom `M -> N` induces `H0 G M -> H0 G N` and `H1 G M -> H1 G N`.
+[ ] G-module hom `M -> N` induces `H0 G M -> H0 G N` and `H1 G M -> H1 G N`.
 
 * Connecting map `H0 G C` -> `H1 G A` coming from short exact sequence.
 
