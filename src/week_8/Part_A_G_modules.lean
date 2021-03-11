@@ -77,11 +77,18 @@ example : (1 : G) • m = m := one_smul G m -- a simp lemma
 example : (g₁ * g₂) • m = g₁ • (g₂ • m) := mul_smul g₁ g₂ m -- not a simp lemma
 example : g • (m₁ - m₂) = g • m₁ - g • m₂ := smul_sub g m₁ m₂ -- is it a simp lemma?
 
--- exercises
+-- exercises.
+-- You should use the `rewrite` tactic. Remember that Lean's
+-- rewrite tactic tries `refl` for luck at the end (not like NNG)
 example : (g₁ * g₂) • (m₁ + m₂) = g₁ • g₂ • m₁ + g₁ • g₂ • m₂ :=
 begin
-  simp [mul_smul],
+  sorry
 end
+
+example : (1 * 1 * 1 : G) • m = m :=
+begin
+  sorry
+end 
 
 /-
 
@@ -196,14 +203,13 @@ variables
 example : φ (g • m) = g • (φ m) := φ.map_smul g m -- a simp lemma
 example (m₁ m₂ : M) : φ (m₁ + m₂) = φ m₁ + φ m₂ := φ.map_add m₁ m₂ -- a simp lemma
 
+-- exercise
 example : φ (g • (m₁ + m₂)) = g • φ m₁ + g • φ m₂ :=
 begin
   -- what will you rewrite? Will you rewrite at all?
-  rw φ.map_smul,
-  rw φ.map_add, 
-  rw smul_add,
-  -- or just `simp` will do it
+  sorry
 end
+
 /-
 
 
@@ -226,16 +232,15 @@ begin
   -- library_search will take some time (I don't know why)
   -- but will eventually find the answer to this one. 
   -- But you can guess it quicker!
-  -- what will you rewrite? Remember rewrite tries 
-  -- `refl` afterwards (unlike NNG)
-  rw φ.map_zero,
+  -- what will you rewrite?
+  sorry
 end
 
--- Can you solve it in term mode?
-example : φ 0 = 0 := φ.map_zero
--- change `sorry` to the name of a tactic
-example : φ 0 = 0 := by simp
+-- Can you solve it in term mode like in those earlier examples?
+example : φ 0 = 0 := sorry
 
+-- Can you change `sorry` to the name of a tactic?
+example : φ 0 = 0 := by sorry
 
 -- You know how to compose functions, you just write `ψ (φ a)`
 -- or whatever. Composition in the category of G-modules is
@@ -261,7 +266,7 @@ variable (ψ : N →+[G] P)
 example :
   ψ.comp φ (g • (m₁ + m₂)) = g • (ψ (φ m₁) + ψ (φ m₂)) :=
 begin
-  simp,
+  sorry,
 end
 
 end distrib_mul_action_hom
@@ -280,17 +285,14 @@ lemma is_exact_def (φ : A →+[G] B) (ψ : B →+[G] C) :
   is_exact φ ψ ↔ ∀ b : B, ψ b = 0 ↔ ∃ a : A, φ a = b :=
 iff.rfl
 
--- you'll need to know about the sets API to do this,
--- as covered for example in earlier parts of this course.
+-- tricky exercise: `is_exact_def'`. 
+-- you'll need to know a bit about the sets API to do this,
 -- Switch your infoview filter onto "only props" to get the noise
 -- out of the way.
 lemma is_exact_def' (φ : A →+[G] B) (ψ : B →+[G] C) :
   is_exact φ ψ ↔ ψ ⁻¹' {c : C | c = 0} = set.range φ :=
 begin
-  rw is_exact_def, -- LHS : let's see what we have
-  rw set.ext_iff, -- RHS : extensionality for sets in handy rewrite form
-  -- now we see both sides say the same thing by definition,
-  refl,
+  sorry
 end
 
 /-
@@ -320,11 +322,7 @@ iff.rfl
 -- Get some practice pulling off sub-facts from this compound fact.
 example : is_short_exact φ ψ → injective φ :=
 begin
-  intro h,
-  rw is_short_exact_def at h,
-  cases h with h1 h23,
-  cases h23 with h2 h3,
-  exact h2
+  sorry,
 end
 
 end group
