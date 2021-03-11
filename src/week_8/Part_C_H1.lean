@@ -237,12 +237,7 @@ end
 variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 
 def map_comp (φ: M →+[G] N) (ψ : N →+[G] P) (z : _root_.Z1 G M) :
-  (ψ.Z1) ((φ.Z1) z) = (ψ.comp φ).Z1 z :=
-begin
-  dsimp [comp],
-  -- what do you think?
-  sorry
-end
+  (ψ.Z1) ((φ.Z1) z) = (ψ.comp φ).Z1 z := rfl
 
 @[simp] lemma Z1_spec (φ : M →+[G] N) (a : _root_.Z1 G M) (g : G) : 
   φ.Z1 a g = φ (a g) := rfl
