@@ -19,7 +19,7 @@ will help for some of the harder problems.
 
 ## The low-budget way
 
-It's slow but it works.
+It's slow but it works. You have to wait until it says "Lean is ready" (not "Lean is busy") and you have to enable some cookies.
 
 [click here to play Part A online](https://leanprover-community.github.io/lean-web-editor/#url=https%3A%2F%2Fraw.githubusercontent.com%2FImperialCollegeLondon%2Fformalising-mathematics%2Fmaster%2Fsrc%2Fweek_8%2FPart_A_G_modules.lean)
 
