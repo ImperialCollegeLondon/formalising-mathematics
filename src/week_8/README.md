@@ -17,6 +17,14 @@ will help for some of the harder problems.
 
 # How do I do the workshop?
 
+## The low-budget way
+
+It's slow but it works.
+
+[click here to play Part A online](https://leanprover-community.github.io/lean-web-editor/#url=https%3A%2F%2Fraw.githubusercontent.com%2FImperialCollegeLondon%2Fformalising-mathematics%2Fmaster%2Fsrc%2Fweek_8%2FPart_A_G_modules.lean)
+
+## The proper way
+
 Step 1) Get started with Lean by installing the leanprover-community tool `leanproject`.
 Follow the instructions at the [leanprover-community.github.io](https://leanprover-community.github.io/get_started.html) website.
 
