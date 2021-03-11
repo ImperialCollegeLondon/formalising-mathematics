@@ -33,15 +33,6 @@ middle (i.e. if `0 → A → B → C → 0` is a short exact sequence
 of `G`-modules then the sequence `H1 G A →+ H1 G B →+ H1 G C`
 is exact).
 
-In Part D of this week's workshop we will define
-a boundary map `H0 G C →+ H1 H A` coming from a short
-exact sequence of `G`-modules. In this definition we make
-a choice of sign ("do we use `g b - b` or `b - g b`?"). 
-The final boss of this course
-is verifying the first seven terms of the long exact sequence
-of group cohomology associated to a short exact sequence of
-G-modules.
-
 Further work would be to verify "inf-res", otherwise known
 as the beginning of the long exact
 sequence of terms of low degree in the Hochschild-Serre
@@ -256,56 +247,6 @@ end
   (φ.Z1 a : G → N) = (φ ∘ a) := rfl
 end distrib_mul_action_hom
 
--- now some stuff on coboundaries
-
-section B1 -- we'll put it in the root namespace
-
-variables {G M : Type}
-  [monoid G] [add_comm_group M] [distrib_mul_action G M]
-
-def is_coboundary (f : G → M) : Prop :=
-∃ m, ∀ g, f g = g • m - m 
--- exercise: how do you think Lean works out the types of `g` and `m`
--- in the above definition?
--- Humans do it by correctly guessing `g : G` and `m : M`. Lean does it
--- in another way -- what is it?
-
--- useful for rewrites
-lemma is_coboundary_def (f : G → M) :
-  is_coboundary f ↔ ∃ m, ∀ g, f g = g • m - m :=
--- true by definition
-iff.rfl
-
--- let's define `B1 G M` as a subgroup of `Z1 G M`.
-def B1 (G M : Type) [monoid G] [add_comm_group M]
-  [distrib_mul_action G M] : add_subgroup (Z1 G M) :=
-{ carrier := {a | is_coboundary a },
-  zero_mem' := begin
-    use 0,
-    simp,
-  end,
-  add_mem' := begin
-    rintros a b ⟨m, hm⟩ ⟨n, hn⟩,
-    use m + n,
-    intro g,
-    simp [hm g, hn g],
-    abel,
-  end,
-  neg_mem' := begin
-    rintros a ⟨m, hm⟩,
-    use -m,
-    intro g,
-    simp [hm g],
-  end }
-
--- a useful lemma to have around
-lemma mem_B1 (a : Z1 G M) : a ∈ B1 G M ↔ ∃ (m : M), ∀ (g : G), a g = g • m - m := iff.rfl
-
-end B1
-
--- here used to be ab_B1 but we never use it,
--- we just use M → Z1
-
 section cochain_map
 
 variables (G M : Type) [monoid G] [add_comm_group M]
@@ -335,13 +276,8 @@ end cochain_map
 -- `f : A → B` is a group hom, how do I make the type coker f`
 
 -- Lean has inbuilt quotients of additive abelian groups by subgroups
-@[derive add_comm_group]
-def H1 (G M : Type) [monoid G] [add_comm_group M]
-  [distrib_mul_action G M] : Type :=
-quotient_add_group.quotient (B1 G M)
-
 @[derive add_comm_group] 
-def ab_H1 (G M : Type) [monoid G] [add_comm_group M]
+def H1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : Type :=
 quotient_add_group.quotient ((cochain_map G M).range)
 --quotient_add_group.quotient (B1 G M)
@@ -351,7 +287,7 @@ section quotient_stuff
 variables {G M : Type} [monoid G] [add_comm_group M]
   [distrib_mul_action G M]
 
-def Z1.quotient : Z1 G M →+ ab_H1 G M :=
+def Z1.quotient : Z1 G M →+ H1 G M :=
 quotient_add_group.mk' _
 
 lemma ab_H1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
@@ -359,17 +295,17 @@ quotient_add_group.ker_mk _
 
 end quotient_stuff
 
-namespace ab_H1
+namespace H1
 
 variables {G M : Type} [monoid G] [add_comm_group M]
   [distrib_mul_action G M] 
 
 @[elab_as_eliminator]
-def induction_on {p : ab_H1 G M → Prop} 
-  (IH : ∀ z : Z1 G M, p (z.quotient)) (h : ab_H1 G M) : p h :=
+def induction_on {p : H1 G M → Prop} 
+  (IH : ∀ z : Z1 G M, p (z.quotient)) (h : H1 G M) : p h :=
 quot.induction_on h IH
 
-end ab_H1
+end H1
 
 /-
 We have just defined `H1 G M` as a quotient group, and told Lean
@@ -380,11 +316,9 @@ What we need to do now is to show that if `φ : M →+[G] N` is a `G`-module
 hom then `φ` induces a map `H1 G M → H1 G N`. To prove this we will
 need to figure out how to define maps from and to quotient group structures.
 Just like last week, this is simply a matter of learning the API for the
-definition `quotient_add_group.quotient`. Here it is:
+definition `quotient_add_group.quotient`.
 
-*TODO* fill in
-
-Now let us make the definition.
+TODO -- make the definition
 -/
 
 namespace distrib_mul_action_hom
