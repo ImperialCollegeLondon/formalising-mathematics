@@ -1,5 +1,6 @@
-import week_8.solutions.Part_B_H0
+import week_8.Part_B_H0
 import group_theory.quotient_group
+import algebra.group_action_hom
 
 /-
 
@@ -55,12 +56,14 @@ to define cocycles and coboundaries.
 def Z1_subgroup (G M : Type)
   [monoid G] [add_comm_group M] [distrib_mul_action G M] : add_subgroup (G → M) :=
 { carrier := { f : G → M | ∀ (g h : G), f (g * h) = f g + g • f h },
-  zero_mem' := begin
-    -- the zero map is a cocycle
-    sorry
-  end,
+  zero_mem' := by simp only [add_zero, forall_const, pi.zero_apply, eq_self_iff_true,
+      set.mem_set_of_eq, smul_zero],
   add_mem' := begin
-    sorry,
+    intros c₁ c₂ h₁ h₂,
+    simp only [pi.add_apply, set.mem_set_of_eq],
+    intros g h,
+    rw_mod_cast [h₁, h₂, smul_add],
+    abel,
   end,
   neg_mem' := begin
     sorry,
@@ -103,10 +106,15 @@ end
 
 -- can you prove addition of two cocycles is a cocycle
 def add (a b : Z1 G M) : Z1 G M :=
-{ to_fun := λ g, a g + b g,
-  is_cocycle
+{ to_fun := λ g, a g + b g, is_cocycle
  := begin
-   sorry,
+   intros g h,
+   rcases a with ⟨Fa, ca⟩,-- , Fb, cb⟩,
+   rcases b with ⟨Fb, cb⟩,-- , Fb, cb⟩,
+   specialize ca g h,
+   specialize cb g h,
+   simp [ca, cb],
+   abel,   
   end }
 
 instance : has_add (Z1 G M) := ⟨add⟩
@@ -190,9 +198,12 @@ variables {G M N : Type} [monoid G]
 
 def Z1_hom_underlying_function (φ : M →+[G] N) (f : Z1 G M) : Z1 G N :=
 ⟨λ g, φ (f g), begin
-  -- need to prove that this function obtained by composing the cocycle
+  intros,
+  rcases f with ⟨F, c⟩,
+  specialize c g h,
+  simp [c],
+    -- need to prove that this function obtained by composing the cocycle
   -- f with the G-module homomorphism φ is also a cocycle.
-  sorry
 end⟩
 
 @[norm_cast] 
@@ -228,6 +239,7 @@ variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 def map_comp (φ: M →+[G] N) (ψ : N →+[G] P) (z : _root_.Z1 G M) :
   (ψ.Z1) ((φ.Z1) z) = (ψ.comp φ).Z1 z :=
 begin
+  dsimp [comp],
   -- what do you think?
   sorry
 end
