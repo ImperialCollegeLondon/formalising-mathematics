@@ -109,6 +109,17 @@ begin
   cases a, cases b, simp, ext g, exact h g,
 end
 
+lemma ext_iff (a b : Z1 G M) : a = b ↔ ∀ g, a g = b g :=
+begin
+  split,
+  { rintro rfl g,
+    refl },
+  { intro h,
+    ext g,
+    exact h g }
+end
+
+
 def add (a b : Z1 G M) : Z1 G M :=
 { to_fun := λ g, a g + b g,
   is_cocycle
@@ -280,6 +291,7 @@ end cochain_map
 def H1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : Type :=
 quotient_add_group.quotient ((cochain_map G M).range)
+
 --quotient_add_group.quotient (B1 G M)
 
 section quotient_stuff
@@ -290,7 +302,7 @@ variables {G M : Type} [monoid G] [add_comm_group M]
 def Z1.quotient : Z1 G M →+ H1 G M :=
 quotient_add_group.mk' _
 
-lemma ab_H1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
+lemma Z1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
 quotient_add_group.ker_mk _
 
 end quotient_stuff
@@ -323,73 +335,15 @@ TODO -- make the definition
 
 namespace distrib_mul_action_hom
 
+local notation `Z1'` := _root_.Z1
+
 open add_subgroup
 
 variables {G M N : Type}
   [monoid G] [add_comm_group M] [add_comm_group N]
   [distrib_mul_action G M] [distrib_mul_action G N]
 
--- Let's first define the function `H1 G M → H1 G N` induced by `φ`.
 def H1 (φ : M →+[G] N) : H1 G M →+ H1 G N :=
--- We use `quotient_add_group.map` to define this map
--- by saying that it is a descent of the map `φ.Z1_hom`
-quotient_add_group.map (B1 G M) (B1 G N) φ.Z1
--- We now have to supply the proof that the map on cocycles induces
--- a map on cohomology, i.e. that it sends coboundaries to coboundaries
-begin
-  intros a ha,
-  simp,
-  -- Now switch filter to only props.
-  -- OK let's look at this goal.
-  -- We have a hypothesis `ha`
-  -- which says "a is a coboundary"
-  -- and a goal that says that some function that you can
-  -- make from `a` and `φ`
-  -- It says that if `a` is a 1-boundary
-  -- from `G` to `M` then some one-cycle
-  -- from `G` to `N` made in some weird way
-  -- using `φ` is also a one-boundary
-  -- we still have some weird `.Z1_hom` thing
-  -- Does this have a spec?
-  -- that made progress. I can now start
-  -- to think about what this goal *says*.
-  -- ⇑(φ.Z1_hom) a ∈ B1 G N
-  -- it says that we have to prove that something
-  -- is a coboundary. Let's try rewriting `mem_B1`
-  -- to unfold the actual definition of `∈ B1 G N`
-  rw mem_B1 at ha ⊢, 
-  -- now it nearly all makes sense apart
-  -- from `φ.Z1_hom`, but we can rewrite thag
-  -- now under binders
-  simp_rw φ.Z1_spec, 
-  -- and now we can switch filter onto "only props"
-  -- which is true "maths mode"
-  
-
-  -- so now we're at the heart of the matter.
-  -- We have battled through the computer science
-  -- and now it's time for some mathematics.
-  -- It's getting better. Coercions are fine, don't
-  -- be scared of them, you do coercions in your 
-  -- head all the time, coercion just means
-  -- "forget the axioms and think about moving 
-  -- the actual data around"
-
-  -- If you are looking in VS Code then now is a really
-  -- good time to try the "filter"s in the Infoview.
-  -- Both filters  "no instances" and "only props"
-  -- are cool. One is just the pure logic problem,
-  -- the other is that and the types of the
-  -- terms involved. 
-  -- **TODO** why can't I highlight just 
-  -- `⇑(φ.Z1_hom)` in the infoview
-  -- This is the goal. 
-  cases ha with m hm,
-  use φ m,
-  simp [hm],
-end
-
-def ab_H1 (φ : M →+[G] N) : ab_H1 G M →+ ab_H1 G N :=
 -- We use `quotient_add_group.map` to define this map
 -- by saying that it is a descent of the map `φ.Z1_hom`
 quotient_add_group.map ((cochain_map G M).range) ((cochain_map G N).range)
@@ -402,6 +356,9 @@ begin
   ext g,
   simp [← hm],
 end
+
+def H1_spec (φ : M →+[G] N) (f : Z1' G M) : 
+  φ.H1 (f.quotient) = (φ.Z1 f).quotient := rfl
 
 -- why isn't this there??
 -- ask in Zulip
@@ -444,7 +401,7 @@ example (α β : Type) [setoid α] [setoid β]
   (f : α → β) (h : (has_equiv.equiv ⇒ has_equiv.equiv) f f) (a : α) : 
   quotient.map f h (⟦a⟧) = ⟦f a⟧ := quotient.map_mk f h a
 
-lemma Z1.ab_H1_map_mk (φ : M →+[G] N) : φ.ab_H1 (z.quotient) = 
+lemma Z1.H1_map_mk (φ : M →+[G] N) : φ.H1 (z.quotient) = 
   (φ.Z1 z).quotient :=
 rfl
 
@@ -452,45 +409,11 @@ open function
 
 open add_monoid_hom
 
--- -- the big theorem from this part
--- -- original H1 version
--- theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
---   (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
---   φ.H1.range = ψ.H1.ker :=
--- begin
---   -- need to prove a range is a kernel,
---   ext k,
---   -- let k be a cohomology class, an element of H^1(G,N).
---   -- we're supposed to be proving that we're in a range
---   -- if and only if we're in a kernel
---   -- I tried `simp` and it didn't simplify
---   -- the `k ∈ kernel of some map` so
---   -- I tried again and told `simp` to use it:
---   simp [mem_ker],
---   -- well the "exists" goal is problematic,
---   -- but we could still work on what it means
---   -- for `H1_ψ(k)` to be zero. It means
---   -- that a certain function is a coboundary.
---   -- φ.H1 (⟦xtilde : Z1 G M⟧) = ⟦φ.Z1 xtilde : Z1 G N⟧  
---   -- I can't see how to go further so I'm going to split
---   split,
---   { rintro ⟨x, rfl⟩,
---     apply quot.induction_on x, clear x,
---     -- this is the oriinal H1 version
---     -- I HAVE GIVEN UP ON THIS
---     sorry,
---   },
---   { sorry }
--- end
-#check (0 : M →+[G] N).zero_val
-
--- need distrib_mul_com.ker and hence subtype of G-modules
-
 -- right now will work around with sets
 
-theorem ab_H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
+theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
   (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
-  φ.ab_H1.range = ψ.ab_H1.ker :=
+  φ.H1.range = ψ.H1.ker :=
 begin
   -- need to prove a range is a kernel,
   ext k,
@@ -504,9 +427,9 @@ begin
     refine x.induction_on _, clear x,
     intros z,
     -- should have some map commutes lemma
-    rw Z1.ab_H1_map_mk,
+    rw Z1.H1_map_mk,
     rw mem_ker,
-    rw Z1.ab_H1_map_mk,
+    rw Z1.H1_map_mk,
     convert Z1.quotient.map_zero,
     rw φ.map_comp,
     have hψφ : ψ.comp φ = (0 : M →+[G] P),
@@ -519,15 +442,27 @@ begin
     rw hψφ,
     
     rw is_exact_def' at he,
-    simp,
-
---    rw ← mem_ker,
---    rw ab_H1.ker_quotient,
-    
-
-    sorry
+    rw mem_ker,
+    refl,
   },
-  { sorry }
+  { intro hk,
+    rw mem_range,
+    revert hk,
+    rw mem_ker,
+    refine k.induction_on _, clear k,
+    intros z hz,
+    rw ψ.H1_spec at hz,
+    rw ← mem_ker at hz,
+    rw Z1.ker_quotient at hz,
+    cases hz with y hy,
+    rw Z1.ext_iff at hy,
+    simp_rw cochain_map_apply at hy,
+    simp_rw ψ.Z1_spec at hy, 
+    rw is_exact_def at he,
+    cases hψ y with x hx,
+    let w : G → N := λ g, g • x - x,
+
+    sorry }
 end
 #check is_exact_def
 end exactness
