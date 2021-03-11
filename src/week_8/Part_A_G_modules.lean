@@ -117,9 +117,11 @@ it might be a waste of time which would have to be undone later.
 because it is not so clear that the right hand side is any simpler
 than the left hand side. problems like that you need `abel`.
 
-To learn more about `simp`, check out the simp docs on
-the leanprover-community website.
--- TODO when online -- add link to simp docs in API at leanprover-community website
+To learn more about `simp`, check out the simp docs
+
+https://leanprover-community.github.io/extras/simp.html
+
+on the leanprover-community website.
 
 ## A note on `abel`
 
