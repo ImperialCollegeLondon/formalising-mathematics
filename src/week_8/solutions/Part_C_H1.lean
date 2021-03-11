@@ -118,6 +118,9 @@ begin
   cases a, cases b, simp, ext g, exact h g,
 end
 
+lemma ext_iff (a b : Z1 G M) : a = b ↔ ∀ g, a g = b g :=
+⟨by { rintro rfl, exact λ _, rfl }, ext _ _⟩ 
+
 def add (a b : Z1 G M) : Z1 G M :=
 { to_fun := λ g, a g + b g,
   is_cocycle
@@ -256,52 +259,7 @@ end
   (φ.Z1 a : G → N) = (φ ∘ a) := rfl
 end distrib_mul_action_hom
 
--- now some stuff on coboundaries
 
-section B1 -- we'll put it in the root namespace
-
-variables {G M : Type}
-  [monoid G] [add_comm_group M] [distrib_mul_action G M]
-
-def is_coboundary (f : G → M) : Prop :=
-∃ m, ∀ g, f g = g • m - m 
--- exercise: how do you think Lean works out the types of `g` and `m`
--- in the above definition?
--- Humans do it by correctly guessing `g : G` and `m : M`. Lean does it
--- in another way -- what is it?
-
--- useful for rewrites
-lemma is_coboundary_def (f : G → M) :
-  is_coboundary f ↔ ∃ m, ∀ g, f g = g • m - m :=
--- true by definition
-iff.rfl
-
--- let's define `B1 G M` as a subgroup of `Z1 G M`.
-def B1 (G M : Type) [monoid G] [add_comm_group M]
-  [distrib_mul_action G M] : add_subgroup (Z1 G M) :=
-{ carrier := {a | is_coboundary a },
-  zero_mem' := begin
-    use 0,
-    simp,
-  end,
-  add_mem' := begin
-    rintros a b ⟨m, hm⟩ ⟨n, hn⟩,
-    use m + n,
-    intro g,
-    simp [hm g, hn g],
-    abel,
-  end,
-  neg_mem' := begin
-    rintros a ⟨m, hm⟩,
-    use -m,
-    intro g,
-    simp [hm g],
-  end }
-
--- a useful lemma to have around
-lemma mem_B1 (a : Z1 G M) : a ∈ B1 G M ↔ ∃ (m : M), ∀ (g : G), a g = g • m - m := iff.rfl
-
-end B1
 
 -- here used to be ab_B1 but we never use it,
 -- we just use M → Z1
@@ -338,38 +296,32 @@ end cochain_map
 @[derive add_comm_group]
 def H1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : Type :=
-quotient_add_group.quotient (B1 G M)
-
-@[derive add_comm_group] 
-def ab_H1 (G M : Type) [monoid G] [add_comm_group M]
-  [distrib_mul_action G M] : Type :=
 quotient_add_group.quotient ((cochain_map G M).range)
---quotient_add_group.quotient (B1 G M)
 
 section quotient_stuff
 
 variables {G M : Type} [monoid G] [add_comm_group M]
   [distrib_mul_action G M]
 
-def Z1.quotient : Z1 G M →+ ab_H1 G M :=
+def Z1.quotient : Z1 G M →+ H1 G M :=
 quotient_add_group.mk' _
 
-lemma ab_H1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
+lemma H1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
 quotient_add_group.ker_mk _
 
 end quotient_stuff
 
-namespace ab_H1
+namespace H1
 
 variables {G M : Type} [monoid G] [add_comm_group M]
   [distrib_mul_action G M] 
 
 @[elab_as_eliminator]
-def induction_on {p : ab_H1 G M → Prop} 
-  (IH : ∀ z : Z1 G M, p (z.quotient)) (h : ab_H1 G M) : p h :=
+def induction_on {p : H1 G M → Prop} 
+  (IH : ∀ z : Z1 G M, p (z.quotient)) (h : H1 G M) : p h :=
 quot.induction_on h IH
 
-end ab_H1
+end H1
 
 /-
 We have just defined `H1 G M` as a quotient group, and told Lean
@@ -395,70 +347,70 @@ variables {G M N : Type}
   [monoid G] [add_comm_group M] [add_comm_group N]
   [distrib_mul_action G M] [distrib_mul_action G N]
 
--- Let's first define the function `H1 G M → H1 G N` induced by `φ`.
+-- -- Let's first define the function `H1 G M → H1 G N` induced by `φ`.
+-- def H1 (φ : M →+[G] N) : H1 G M →+ H1 G N :=
+-- -- We use `quotient_add_group.map` to define this map
+-- -- by saying that it is a descent of the map `φ.Z1_hom`
+-- quotient_add_group.map _ _ φ.Z1
+-- -- We now have to supply the proof that the map on cocycles induces
+-- -- a map on cohomology, i.e. that it sends coboundaries to coboundaries
+-- begin
+--   intros a ha,
+--   simp,
+--   -- Now switch filter to only props.
+--   -- OK let's look at this goal.
+--   -- We have a hypothesis `ha`
+--   -- which says "a is a coboundary"
+--   -- and a goal that says that some function that you can
+--   -- make from `a` and `φ`
+--   -- It says that if `a` is a 1-boundary
+--   -- from `G` to `M` then some one-cycle
+--   -- from `G` to `N` made in some weird way
+--   -- using `φ` is also a one-boundary
+--   -- we still have some weird `.Z1_hom` thing
+--   -- Does this have a spec?
+--   -- that made progress. I can now start
+--   -- to think about what this goal *says*.
+--   -- ⇑(φ.Z1_hom) a ∈ B1 G N
+--   -- it says that we have to prove that something
+--   -- is a coboundary. Let's try rewriting `mem_B1`
+--   -- to unfold the actual definition of `∈ B1 G N`
+--   rw mem_B1 at ha ⊢, 
+--   -- now it nearly all makes sense apart
+--   -- from `φ.Z1_hom`, but we can rewrite thag
+--   -- now under binders
+--   simp_rw φ.Z1_spec, 
+--   -- and now we can switch filter onto "only props"
+--   -- which is true "maths mode"
+  
+
+--   -- so now we're at the heart of the matter.
+--   -- We have battled through the computer science
+--   -- and now it's time for some mathematics.
+--   -- It's getting better. Coercions are fine, don't
+--   -- be scared of them, you do coercions in your 
+--   -- head all the time, coercion just means
+--   -- "forget the axioms and think about moving 
+--   -- the actual data around"
+
+--   -- If you are looking in VS Code then now is a really
+--   -- good time to try the "filter"s in the Infoview.
+--   -- Both filters  "no instances" and "only props"
+--   -- are cool. One is just the pure logic problem,
+--   -- the other is that and the types of the
+--   -- terms involved. 
+--   -- **TODO** why can't I highlight just 
+--   -- `⇑(φ.Z1_hom)` in the infoview
+--   -- This is the goal. 
+--   cases ha with m hm,
+--   use φ m,
+--   simp [hm],
+-- end
+
 def H1 (φ : M →+[G] N) : H1 G M →+ H1 G N :=
 -- We use `quotient_add_group.map` to define this map
 -- by saying that it is a descent of the map `φ.Z1_hom`
-quotient_add_group.map (B1 G M) (B1 G N) φ.Z1
--- We now have to supply the proof that the map on cocycles induces
--- a map on cohomology, i.e. that it sends coboundaries to coboundaries
-begin
-  intros a ha,
-  simp,
-  -- Now switch filter to only props.
-  -- OK let's look at this goal.
-  -- We have a hypothesis `ha`
-  -- which says "a is a coboundary"
-  -- and a goal that says that some function that you can
-  -- make from `a` and `φ`
-  -- It says that if `a` is a 1-boundary
-  -- from `G` to `M` then some one-cycle
-  -- from `G` to `N` made in some weird way
-  -- using `φ` is also a one-boundary
-  -- we still have some weird `.Z1_hom` thing
-  -- Does this have a spec?
-  -- that made progress. I can now start
-  -- to think about what this goal *says*.
-  -- ⇑(φ.Z1_hom) a ∈ B1 G N
-  -- it says that we have to prove that something
-  -- is a coboundary. Let's try rewriting `mem_B1`
-  -- to unfold the actual definition of `∈ B1 G N`
-  rw mem_B1 at ha ⊢, 
-  -- now it nearly all makes sense apart
-  -- from `φ.Z1_hom`, but we can rewrite thag
-  -- now under binders
-  simp_rw φ.Z1_spec, 
-  -- and now we can switch filter onto "only props"
-  -- which is true "maths mode"
-  
-
-  -- so now we're at the heart of the matter.
-  -- We have battled through the computer science
-  -- and now it's time for some mathematics.
-  -- It's getting better. Coercions are fine, don't
-  -- be scared of them, you do coercions in your 
-  -- head all the time, coercion just means
-  -- "forget the axioms and think about moving 
-  -- the actual data around"
-
-  -- If you are looking in VS Code then now is a really
-  -- good time to try the "filter"s in the Infoview.
-  -- Both filters  "no instances" and "only props"
-  -- are cool. One is just the pure logic problem,
-  -- the other is that and the types of the
-  -- terms involved. 
-  -- **TODO** why can't I highlight just 
-  -- `⇑(φ.Z1_hom)` in the infoview
-  -- This is the goal. 
-  cases ha with m hm,
-  use φ m,
-  simp [hm],
-end
-
-def ab_H1 (φ : M →+[G] N) : ab_H1 G M →+ ab_H1 G N :=
--- We use `quotient_add_group.map` to define this map
--- by saying that it is a descent of the map `φ.Z1_hom`
-quotient_add_group.map ((cochain_map G M).range) ((cochain_map G N).range)
+quotient_add_group.map _ _
   φ.Z1
 -- We now have to supply the proof that the map on cocycles induces
 -- a map on cohomology, i.e. that it sends coboundaries to coboundaries
@@ -510,7 +462,7 @@ example (α β : Type) [setoid α] [setoid β]
   (f : α → β) (h : (has_equiv.equiv ⇒ has_equiv.equiv) f f) (a : α) : 
   quotient.map f h (⟦a⟧) = ⟦f a⟧ := quotient.map_mk f h a
 
-lemma Z1.ab_H1_map_mk (φ : M →+[G] N) : φ.ab_H1 (z.quotient) = 
+lemma Z1.H1_map_mk (φ : M →+[G] N) : φ.H1 (z.quotient) = 
   (φ.Z1 z).quotient :=
 rfl
 
@@ -554,9 +506,9 @@ open add_monoid_hom
 
 -- right now will work around with sets
 
-theorem ab_H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
+theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
   (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
-  φ.ab_H1.range = ψ.ab_H1.ker :=
+  φ.H1.range = ψ.H1.ker :=
 begin
   -- need to prove a range is a kernel,
   ext k,
@@ -570,9 +522,9 @@ begin
     refine x.induction_on _, clear x,
     intros z,
     -- should have some map commutes lemma
-    rw Z1.ab_H1_map_mk,
+    rw Z1.H1_map_mk,
     rw mem_ker,
-    rw Z1.ab_H1_map_mk,
+    rw Z1.H1_map_mk,
     convert Z1.quotient.map_zero,
     rw φ.map_comp,
     have hψφ : ψ.comp φ = (0 : M →+[G] P),
@@ -585,16 +537,56 @@ begin
     rw hψφ,
     
     rw is_exact_def' at he,
-    simp,
+    rw mem_ker,
+    refl },
+  { -- this is the trickier way. What is the maths proof?
+/-
 
---    rw ← mem_ker,
---    rw ab_H1.ker_quotient,
-    
+I use set theory language
+Say k ∈ H¹(N) and H¹(ψ)(k) = 0. Need to find c in H¹(M) such that
+H¹(φ)(c) = k. Lift k to a cocycle x in Z¹(N). Need to pull back
+x along φ. Can modify x by a coboundary to get λ g, x g + g n - n
+So let's see if we can turn "H¹(ψ)(k)=0" into the existence
+of a magic `n0` such that ∀ g, ψ (x g + g n0 - n0) = 0 
 
-    sorry
-  },
-  { sorry }
+
+
+
+-/  
+    rw mem_ker,
+    -- why isn't this better
+    refine H1.induction_on _ k, clear k,
+    intros z hz,
+    rw Z1.H1_map_mk at hz,
+    rw ← mem_ker at hz,
+    rw H1.ker_quotient at hz,
+    cases hz with p hp,
+    rw Z1.ext_iff at hp,
+    simp at hp, -- yes
+    rw mem_range,
+    /-
+    ∃ (x : H1 G M), ⇑(φ.H1) x = ⇑Z1.quotient z -/
+    --refine ⟨_, _⟩, swap,
+    -- ⊢ ⇑(φ.H1) ?m_1 = ⇑Z1.quotient z
+    -- Idea : I want to apply the universal property
+    -- for H¹(φ) but this is of the form 
+
+    refine ⟨Z1.quotient (_ : Z1 G M), _⟩, swap, --working backwards
+    { rw Z1.H1_map_mk,
+      sorry },
+    -- this next goal might randomly disappear, it's not a prop
+    -- it's `⊢ H1 G M`
+    sorry }
 end
-#check is_exact_def
+
 end exactness
 
+#where
+
+#check H1.induction_on
+/-
+H1.induction_on : ∀ {G M : Type} [_inst_1 : monoid G]
+[_inst_2 : add_comm_group M] [_inst_3 : distrib_mul_action G M]
+{p : H1 G M → Prop}, 
+(∀ (z : Z1 G M), p (⇑Z1.quotient z)) → ∀ (h : H1 G M), p h
+-/
