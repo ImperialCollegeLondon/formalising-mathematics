@@ -215,7 +215,7 @@ end⟩
 
 @[norm_cast] 
 lemma Z1_hom_underlying_function_coe_comp (φ : M →+[G] N) (f : Z1 G M) (g : G) :
-  (Z1_hom_underlying_function φ f g : N) = φ (f g) := rfl--
+  (Z1_hom_underlying_function φ f g : N) = φ (f g) := rfl
 
 def Z1 (φ : M →+[G] N) : Z1 G M →+ Z1 G N :=
 -- to make a term of type `X →+ Y` (a group homomorphism) from a function
@@ -238,6 +238,15 @@ begin
   intros e f,
   ext g,
   simp [φ.Z1_hom_underlying_function_coe_comp],
+end
+
+-- it's a functor
+variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
+
+def map_comp (φ: M →+[G] N) (ψ : N →+[G] P) (z : _root_.Z1 G M) :
+  (ψ.Z1) ((φ.Z1) z) = (ψ.comp φ).Z1 z :=
+begin
+  refl,
 end
 
 @[simp] lemma Z1_spec (φ : M →+[G] N) (a : _root_.Z1 G M) (g : G) : 
@@ -294,134 +303,8 @@ lemma mem_B1 (a : Z1 G M) : a ∈ B1 G M ↔ ∃ (m : M), ∀ (g : G), a g = g �
 
 end B1
 
-section ab_B1andH1 -- we'll put it in the root namespace
-
--- I think we can delete ab_B1, I never used it?
--- let's define abstract B1 to be the subtype of functions
-structure ab_B1 (G M : Type)
-  [monoid G] [add_comm_group M] [distrib_mul_action G M] :=
-(to_fun : G → M)
-(is_coboundary' : ∃ m : M, ∀ g : G, to_fun g = g • m - m)
-
-namespace ab_B1
-
-variables {G M : Type}
-  [monoid G] [add_comm_group M] [distrib_mul_action G M]
-
-instance : has_coe_to_fun (ab_B1 G M) :=
-⟨_, to_fun⟩
-
-@[simp] lemma coe_apply (to_fun : G → M)
-  (is_coboundary : ∃ m : M, ∀ g : G, to_fun g = g • m - m ) (g : G) :
-({ to_fun := to_fun, is_coboundary' := is_coboundary} : ab_B1 G M) g = to_fun g := rfl
-
-def is_coboundary (f : ab_B1 G M) : ∃ m : M, ∀ g : G, f g = g • m - m := f.2
-def spec (f : ab_B1 G M) : ∃ m : M, ∀ g : G, f g = g • m - m := f.2
-
--- add an extensionality lemma
-@[ext] lemma ext (a b : ab_B1 G M) (h : ∀ g,  a g = b g) : a = b :=
-begin
-  cases a, cases b, simp, ext g, exact h g,
-end
-
-def add (a b : ab_B1 G M) : ab_B1 G M :=
-{ to_fun := λ g, a g + b g,
-  is_coboundary' := begin
-    cases a.is_coboundary with m hm,
-    cases b.is_coboundary with n hn,
-    use m + n,
-    intro g,
-    simp [hm, hn],
-    abel,
-  end }
-
-instance : has_add (ab_B1 G M) := ⟨add⟩
-
-@[simp] lemma coe_add (a b : ab_B1 G M) (g : G) : (a + b) g = a g + b g := rfl
-
-def zero : ab_B1 G M := 
-{ to_fun := λ g, 0,
-  is_coboundary' := begin
-    use 0,
-    simp,
-  end
-}
-
-instance : has_zero (ab_B1 G M) := ⟨zero⟩
-
-@[simp] lemma coe_zero (g : G) : (0 : ab_B1 G M) g = 0 := rfl
-
-def neg (a : ab_B1 G M) : ab_B1 G M :=
-{ to_fun := λ g, -(a g),
-  is_coboundary' := begin
-    intros,
-    cases a.is_coboundary with m hm,
-    use -m,
-    simp [a.spec, hm],
-  end
-}
-
-instance : has_neg (ab_B1 G M) := ⟨neg⟩
-
-@[simp] lemma coe_neg (a : ab_B1 G M) (g : G) : (-a) g = -(a g) := rfl
-
-def sub (a b : ab_B1 G M) : ab_B1 G M := a + -b
-
-instance : has_sub (ab_B1 G M) := ⟨sub⟩
-
--- make the cocycles into a group
-instance : add_comm_group (ab_B1 G M) :=
-begin
-  refine_struct { 
-    add := (+),
-    zero := (0 : ab_B1 G M),
-    neg := has_neg.neg,
-    sub := has_sub.sub,
-    -- ignore this, we have to fill in this proof for technical reasons
-    sub_eq_add_neg := λ _ _, rfl };
-  -- we now have five goals. Let's use the semicolon trick to work on 
-  -- all of them at once. I'll show you what happens to the proof
-  -- of associativity, the others are the same mutatis mutandis
-  -- (but harder to see)
-  intros;
-  -- ⊢ a + b + c = a + (b + c)
-  ext;
-  -- ⊢ ⇑(a + b + c) g = ⇑(a + (b + c)) g
-  simp;
-  -- ⊢ ⇑a g + ⇑b g + ⇑c g = ⇑a g + (⇑b g + ⇑c g)
-  abel
-  -- general additive abelian group tactic which solves
-  -- goals which are (absolute) identities in every abelian group.
-  -- Hypotheses are not looked at though. See Chris Hughes' forthcoming
-  -- Imperial MSc thesis for a new group theory tactic which is to `abel`
-  -- what `nlinarith` is to `ring`.
-end
-
-end ab_B1
-
-namespace distrib_mul_action_hom
-
-variables {G M N : Type}
-  [monoid G] [add_comm_group M] [distrib_mul_action G M]
-  [add_comm_group N] [distrib_mul_action G N]
-
--- def ab_B1 (φ : M →+[G] N) : ab_B1 G M →+ ab_B1 G N :=
--- { to_fun := λ f, {to_fun := λ g, φ (f g), is_coboundary' := begin
---   cases f.spec with m hm,
---   use φ m,
---   simp [hm], 
--- end },
---   map_zero' := begin
---     ext,
---     simp,
---   end,
---   map_add' := begin
---     intros,
---     ext,
---     simp,
---   end }
-
-end distrib_mul_action_hom
+-- here used to be ab_B1 but we never use it,
+-- we just use M → Z1
 
 section cochain_map
 
@@ -463,16 +346,23 @@ def ab_H1 (G M : Type) [monoid G] [add_comm_group M]
 quotient_add_group.quotient ((cochain_map G M).range)
 --quotient_add_group.quotient (B1 G M)
 
-def Z1.quotient {G M : Type} [monoid G] [add_comm_group M]
-  [distrib_mul_action G M] : Z1 G M →+ ab_H1 G M :=
+section quotient_stuff
+
+variables {G M : Type} [monoid G] [add_comm_group M]
+  [distrib_mul_action G M]
+
+def Z1.quotient : Z1 G M →+ ab_H1 G M :=
 quotient_add_group.mk' _
+
+lemma ab_H1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
+quotient_add_group.ker_mk _
+
+end quotient_stuff
 
 namespace ab_H1
 
 variables {G M : Type} [monoid G] [add_comm_group M]
   [distrib_mul_action G M] 
-
-
 
 @[elab_as_eliminator]
 def induction_on {p : ab_H1 G M → Prop} 
@@ -481,9 +371,7 @@ quot.induction_on h IH
 
 end ab_H1
 
-end ab_B1andH1
 /-
-
 We have just defined `H1 G M` as a quotient group, and told Lean
 to figure out (or "derive") the obvious abelian group structure
 on it, which it did.
@@ -581,6 +469,32 @@ begin
   simp [← hm],
 end
 
+-- why isn't this there??
+-- ask in Zulip
+instance : add_comm_group (M →+[G] N) :=
+{ add := λ a b, ({ to_fun := λ m, a m + b m,
+    map_smul' := by simp,
+    map_zero' := by simp,
+    map_add' := by { intros, simp [map_add], abel} }),
+  add_assoc := sorry,--by {intros, ext m, simp only [add_comm_group.add], dsimp, },--abel}, -- missing coe_add simp lemma?
+  zero := { to_fun := λ m, 0,
+    map_smul' := by simp,
+    map_zero' := by simp,
+    map_add' := by simp },
+  zero_add := sorry,
+  add_zero := sorry,
+  neg := λ a, { to_fun := λ m, -(a m),
+    map_smul' := by simp,
+    map_zero' := by simp,
+    map_add' := by { intros, simp [map_neg], abel} },
+  add_left_neg := sorry,
+  add_comm := sorry }
+
+-- API for instance
+@[simp] lemma zero_val (m : M) : (0 : M →+[G] N) m = 0 := rfl
+#check @zero_val
+#print zero_val
+
 end distrib_mul_action_hom
 
 section exactness
@@ -604,39 +518,42 @@ open function
 
 open add_monoid_hom
 
--- the big theorem from this part
--- original H1 version
-theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
-  (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
-  φ.H1.range = ψ.H1.ker :=
-begin
-  -- need to prove a range is a kernel,
-  ext k,
-  -- let k be a cohomology class, an element of H^1(G,N).
-  -- we're supposed to be proving that we're in a range
-  -- if and only if we're in a kernel
-  -- I tried `simp` and it didn't simplify
-  -- the `k ∈ kernel of some map` so
-  -- I tried again and told `simp` to use it:
-  simp [mem_ker],
-  -- well the "exists" goal is problematic,
-  -- but we could still work on what it means
-  -- for `H1_ψ(k)` to be zero. It means
-  -- that a certain function is a coboundary.
-  -- φ.H1 (⟦xtilde : Z1 G M⟧) = ⟦φ.Z1 xtilde : Z1 G N⟧  
-  -- I can't see how to go further so I'm going to split
-  split,
-  { rintro ⟨x, rfl⟩,
-    apply quot.induction_on x, clear x,
-    -- this is the oriinal H1 version
-    -- now I should be able to rewrite
-    sorry,
-  },
-  { sorry }
-end
+-- -- the big theorem from this part
+-- -- original H1 version
+-- theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
+--   (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
+--   φ.H1.range = ψ.H1.ker :=
+-- begin
+--   -- need to prove a range is a kernel,
+--   ext k,
+--   -- let k be a cohomology class, an element of H^1(G,N).
+--   -- we're supposed to be proving that we're in a range
+--   -- if and only if we're in a kernel
+--   -- I tried `simp` and it didn't simplify
+--   -- the `k ∈ kernel of some map` so
+--   -- I tried again and told `simp` to use it:
+--   simp [mem_ker],
+--   -- well the "exists" goal is problematic,
+--   -- but we could still work on what it means
+--   -- for `H1_ψ(k)` to be zero. It means
+--   -- that a certain function is a coboundary.
+--   -- φ.H1 (⟦xtilde : Z1 G M⟧) = ⟦φ.Z1 xtilde : Z1 G N⟧  
+--   -- I can't see how to go further so I'm going to split
+--   split,
+--   { rintro ⟨x, rfl⟩,
+--     apply quot.induction_on x, clear x,
+--     -- this is the oriinal H1 version
+--     -- I HAVE GIVEN UP ON THIS
+--     sorry,
+--   },
+--   { sorry }
+-- end
+#check (0 : M →+[G] N).zero_val
 
--- the big theorem from this part
--- ab_H1 version
+-- need distrib_mul_com.ker and hence subtype of G-modules
+
+-- right now will work around with sets
+
 theorem ab_H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
   (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
   φ.ab_H1.range = ψ.ab_H1.ker :=
@@ -650,14 +567,34 @@ begin
   -- so I'm going to split
   split,
   { rintro ⟨x, rfl⟩,
-    refine x.induction_on _,
+    refine x.induction_on _, clear x,
     intros z,
     -- should have some map commutes lemma
     rw Z1.ab_H1_map_mk,
+    rw mem_ker,
+    rw Z1.ab_H1_map_mk,
+    convert Z1.quotient.map_zero,
+    rw φ.map_comp,
+    have hψφ : ψ.comp φ = (0 : M →+[G] P),
+    { ext m,
+      simp,
+      rw is_exact_def' at he,
+      rw set.ext_iff at he,
+      simp * at * },
+    rw ← mem_ker,
+    rw hψφ,
+    
+    rw is_exact_def' at he,
+    simp,
+
+--    rw ← mem_ker,
+--    rw ab_H1.ker_quotient,
+    
+
     sorry
   },
   { sorry }
 end
-
+#check is_exact_def
 end exactness
 
