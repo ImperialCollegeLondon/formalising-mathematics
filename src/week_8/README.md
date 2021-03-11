@@ -1,8 +1,10 @@
 # Workshop 8 -- group cohomology
 
 This is the final workshop of Kevin Buzzard's EPSRC Taught
-Course Centre. We're going to do group cohomology in low
-degrees, developing the theory of 1-cocycles and coboundaries
+Course Centre course on formalising matheamtics.
+
+We're going to do group cohomology in low degrees,
+developing the theory of 1-cocycles and coboundaries
 from first principles and chasing some exact sequences around.
 It's rather satisfying.
 
