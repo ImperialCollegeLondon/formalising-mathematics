@@ -19,21 +19,21 @@ will help for some of the harder problems in this workshop.
 
 # Lofty goals
 
-[*] Definitions of `H0 G M` and `H1 G M` (the latter as 1-cocycles `Z1 G M` modulo 1-boundaries)
+- [ ] Definitions of `H0 G M` and `H1 G M` (the latter as 1-cocycles `Z1 G M` modulo 1-boundaries)
 
-[ ] G-module hom `M -> N` induces `H0 G M -> H0 G N` and `H1 G M -> H1 G N`.
+- [ ] G-module hom `M -> N` induces `H0 G M -> H0 G N` and `H1 G M -> H1 G N`.
 
-* Connecting map `H0 G C` -> `H1 G A` coming from short exact sequence.
+- [ ] Connecting map `H0 G C` -> `H1 G A` coming from short exact sequence.
 
-* Short exact sequence of G-modules gives seven term long-exact sequence of cohomology.
+- [ ] Short exact sequence of G-modules gives seven term long-exact sequence of cohomology.
 
-* Inf-res
+- [ ] Inf-res
 
-* H2, more Inf-res, ten term long exact sequence of cohomology.
+- [ ] H2, more Inf-res, ten term long exact sequence of cohomology.
 
-* n-cocycles and n-coboundaries.
+- [ ] n-cocycles and n-coboundaries.
 
-* Hochshild-Serre spectral sequence.
+- [ ] Hochshild-Serre spectral sequence.
 
 # How do I do the workshop?
 
