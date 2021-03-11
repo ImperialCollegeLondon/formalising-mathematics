@@ -12,8 +12,28 @@ Mathematically it would be useful if you were happy with the
 concept of a group acting on an abelian group.
 
 For Lean if you've played the natural number game then this would
-help, and if you've done some of the earlier workshops then this
-will help for some of the harder problems.
+help, -- you need to know what `rw h` means.
+
+If you've done some of the earlier workshops then this
+will help for some of the harder problems in this workshop.
+
+# Lofty goals
+
+* Definitions of `H0 G M` and `H1 G M` (the latter as 1-cocycles `Z1 G M` modulo 1-boundaries)
+
+* G-module hom `M -> N` induces `H0 G M -> H0 G N` and `H1 G M -> H1 G N`.
+
+* Connecting map `H0 G C` -> `H1 G A` coming from short exact sequence.
+
+* Short exact sequence of G-modules gives seven term long-exact sequence of cohomology.
+
+* Inf-res
+
+* H2, more Inf-res, ten term long exact sequence of cohomology.
+
+* n-cocycles and n-coboundaries.
+
+* Hochshild-Serre spectral sequence.
 
 # How do I do the workshop?
 
