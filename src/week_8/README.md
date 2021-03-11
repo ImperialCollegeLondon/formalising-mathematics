@@ -1,9 +1,10 @@
 # Workshop 8 -- group cohomology
 
-This is the final workshop of Kevin Buzzard's EPSRC Taiught
+This is the final workshop of Kevin Buzzard's EPSRC Taught
 Course Centre. We're going to do group cohomology in low
 degrees, developing the theory of 1-cocycles and coboundaries
-from first principles. It's rather satisfying.
+from first principles and chasing some exact sequences around.
+It's rather satisfying.
 
 # Necessary background
 
@@ -33,7 +34,7 @@ Step 4) Fill in the sorrys. Hints are in the comments in the Lean file.
 
 # I did a cool thing and would be fine about having it up on the Imperial College formalising-mathematics public github repo
 
-Nice! Switch to a new branch of the project and we can get it there.
+Nice! Switch to a new branch of the project and we can try to get it there.
 
 If you don't know about git: in the bottom left of VS Code (the editor you're using
 to play Lean) there's a git weird-V-symbol and it probably says `master`. Click
