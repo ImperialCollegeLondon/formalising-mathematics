@@ -49,6 +49,18 @@ Let's start with a definition of `H1 G M`. First we need
 to define cocycles and coboundaries. 
 -/
 
+section is_cocycle'
+
+variables {G M : Type}
+  [monoid G] [add_comm_group M] [distrib_mul_action G M]
+
+--notation `is_cocycle` f := ∀ (g h : domain f), f (g * h) = f g + g • f h
+def is_cocycle (f : G → M) : Prop :=
+∀ (g h : G), f (g * h) = f g + g • f h
+
+
+end is_cocycle'
+
 -- 1-cocycles as an additive subgroup of the group `Hom(G,M)`
 -- a.k.a. `G → M` of functions from `G` to `M`, with group
 -- law induced from `M`.
@@ -110,15 +122,7 @@ begin
 end
 
 lemma ext_iff (a b : Z1 G M) : a = b ↔ ∀ g, a g = b g :=
-begin
-  split,
-  { rintro rfl g,
-    refl },
-  { intro h,
-    ext g,
-    exact h g }
-end
-
+⟨by { rintro rfl, exact λ _, rfl }, ext _ _⟩ 
 
 def add (a b : Z1 G M) : Z1 G M :=
 { to_fun := λ g, a g + b g,
@@ -162,6 +166,9 @@ instance : has_neg (Z1 G M) := ⟨neg⟩
 def sub (a b : Z1 G M) : Z1 G M := a + -b
 
 instance : has_sub (Z1 G M) := ⟨sub⟩
+
+@[simp] lemma coe_sub (a b : Z1 G M) (g : G) : (a - b) g = a g - b g :=
+(sub_eq_add_neg _ _).symm
 
 -- make the cocycles into a group
 instance : add_comm_group (Z1 G M) :=
@@ -287,12 +294,10 @@ end cochain_map
 -- `f : A → B` is a group hom, how do I make the type coker f`
 
 -- Lean has inbuilt quotients of additive abelian groups by subgroups
-@[derive add_comm_group] 
+@[derive add_comm_group]
 def H1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : Type :=
 quotient_add_group.quotient ((cochain_map G M).range)
-
---quotient_add_group.quotient (B1 G M)
 
 section quotient_stuff
 
@@ -302,7 +307,7 @@ variables {G M : Type} [monoid G] [add_comm_group M]
 def Z1.quotient : Z1 G M →+ H1 G M :=
 quotient_add_group.mk' _
 
-lemma Z1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
+lemma H1.ker_quotient : (Z1.quotient).ker = (cochain_map G M).range :=
 quotient_add_group.ker_mk _
 
 end quotient_stuff
@@ -442,28 +447,67 @@ begin
     
     rw is_exact_def' at he,
     rw mem_ker,
-    refl,
-  },
-  { intro hk,
-    rw mem_range,
-    revert hk,
+    refl },
+  { -- this is the trickier way. What is the maths proof?
+/-
+
+I use set theory language
+Say k ∈ H¹(N) and H¹(ψ)(k) = 0. Need to find c in H¹(M) such that
+H¹(φ)(c) = k. Lift k to a cocycle x in Z¹(N). Need to pull back
+x along φ. Can modify x by a coboundary to get λ g, x g + g n - n
+So let's see if we can turn "H¹(ψ)(k)=0" into the existence
+of a magic `n0` such that ∀ g, ψ (x g + g n0 - n0) = 0 
+
+
+
+
+-/  
     rw mem_ker,
-    refine k.induction_on _, clear k,
+    -- why isn't this better
+    refine H1.induction_on _ k, clear k,
     intros z hz,
-    rw ψ.H1_spec at hz,
+    rw Z1.H1_map_mk at hz,
     rw ← mem_ker at hz,
-    rw Z1.ker_quotient at hz,
-    cases hz with y hy,
-    rw Z1.ext_iff at hy,
-    simp_rw cochain_map_apply at hy,
-    simp_rw ψ.Z1_spec at hy, 
-    rw is_exact_def at he,
-    cases hψ y with x hx,
-    let w : G → N := λ g, z g - (g • x - x),
-    have crucial : ∀ (g : G), ψ (z g - (g • x - x)) = 0,
-    { simp [hy, hx] },
+    -- rw Z1.ker_quotient at hz,
+    -- cases hz with y hy,
+    -- rw Z1.ext_iff at hy,
+    -- simp_rw cochain_map_apply at hy,
+    -- simp_rw ψ.Z1_spec at hy, 
+    -- rw is_exact_def at he,
+    -- cases hψ y with x hx,
+    -- let w : G → N := λ g, z g - (g • x - x),
+    -- have crucial : ∀ (g : G), ψ (z g - (g • x - x)) = 0,
+    -- { simp [hy, hx] },
+
+    -- note "crucial" above
+    rw H1.ker_quotient at hz,
+    cases hz with p hp,
+    rw Z1.ext_iff at hp,
+    simp at hp, -- yes
+    rw mem_range,
+    /-
+    ∃ (x : H1 G M), ⇑(φ.H1) x = ⇑Z1.quotient z -/
+    --refine ⟨_, _⟩, swap,
+    -- ⊢ ⇑(φ.H1) ?m_1 = ⇑Z1.quotient z
+    -- Idea : I want to apply the universal property
+    -- for H¹(φ) but this is of the form 
+
+    refine ⟨Z1.quotient (_ : Z1 G M), _⟩, swap, --working backwards
+    { rw Z1.H1_map_mk,
+      sorry },
+    -- this next goal might randomly disappear, it's not a prop
+    -- it's `⊢ H1 G M`
     sorry }
 end
-#check is_exact_def
+
 end exactness
 
+#where
+
+#check H1.induction_on
+/-
+H1.induction_on : ∀ {G M : Type} [_inst_1 : monoid G]
+[_inst_2 : add_comm_group M] [_inst_3 : distrib_mul_action G M]
+{p : H1 G M → Prop}, 
+(∀ (z : Z1 G M), p (⇑Z1.quotient z)) → ∀ (h : H1 G M), p h
+-/
