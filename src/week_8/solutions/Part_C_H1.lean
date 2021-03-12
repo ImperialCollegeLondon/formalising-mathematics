@@ -49,6 +49,18 @@ Let's start with a definition of `H1 G M`. First we need
 to define cocycles and coboundaries. 
 -/
 
+section is_cocycle'
+
+variables {G M : Type}
+  [monoid G] [add_comm_group M] [distrib_mul_action G M]
+
+--notation `is_cocycle` f := ∀ (g h : domain f), f (g * h) = f g + g • f h
+def is_cocycle (f : G → M) : Prop :=
+∀ (g h : G), f (g * h) = f g + g • f h
+
+
+end is_cocycle'
+
 -- 1-cocycles as an additive subgroup of the group `Hom(G,M)`
 -- a.k.a. `G → M` of functions from `G` to `M`, with group
 -- law induced from `M`.
@@ -154,6 +166,9 @@ instance : has_neg (Z1 G M) := ⟨neg⟩
 def sub (a b : Z1 G M) : Z1 G M := a + -b
 
 instance : has_sub (Z1 G M) := ⟨sub⟩
+
+@[simp] lemma coe_sub (a b : Z1 G M) (g : G) : (a - b) g = a g - b g :=
+(sub_eq_add_neg _ _).symm
 
 -- make the cocycles into a group
 instance : add_comm_group (Z1 G M) :=
