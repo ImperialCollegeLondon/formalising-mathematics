@@ -37,6 +37,8 @@ begin
   rw group.div_eq_one_iff,
 end
 
+end missing
+
 namespace boundary_map
 
 variables {G M N P : Type} [monoid G]
@@ -120,4 +122,4 @@ inf-res
 
 -/
 
-def bound
+end boundary_map
