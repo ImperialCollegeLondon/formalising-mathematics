@@ -439,15 +439,19 @@ begin
     rw φ.map_comp,
     have hψφ : ψ.comp φ = (0 : M →+[G] P),
     { ext m,
-      rw hse.is_exact_def' at he, -- no he any more, use hse
-      rw set.ext_iff at he,
-      simp * at * },
+      sorry
+      -- rw hse.is_exact_def' at he, -- no he any more, use hse
+      -- rw set.ext_iff at he,
+      -- simp * at * 
+      },
     rw ← mem_ker,
     rw hψφ,
     
-    rw is_exact_def' at he,
-    rw mem_ker,
-    refl },
+    sorry
+    -- rw is_exact_def' at he,
+    -- rw mem_ker,
+    -- refl 
+    },
   { -- this is the trickier way. What is the maths proof?
 /-
 
