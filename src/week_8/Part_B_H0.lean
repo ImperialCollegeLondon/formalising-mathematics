@@ -1,4 +1,4 @@
-import week_8.solutions.Part_A_G_modules
+import week_8.Part_A_G_modules
 
 /-
 
@@ -27,17 +27,17 @@ def H0_subgroup (G M : Type)
     -- you can start with this
     rw mem_set_of_eq, -- says that `a ∈ { x | p x}` is the same as `p a`.
     -- can you take it from there?
-    exact smul_zero,
+    sorry
   end,
   -- Axiom 2 : closed under `+`
   add_mem' := begin
     intros a b ha hb g,
     rw mem_set_of_eq at *, -- that's how I'd start
-    rw [smul_add, ha, hb], -- then the sneaky refl closes the goal    
+    sorry,
   end,
   -- Axiom 3 : closed under `-`
   neg_mem' := begin
-    simp *,
+    sorry
   end }
 
 /-
@@ -126,6 +126,7 @@ add_subgroup.to_add_comm_group (H0_subgroup G M)
 -- Let's now prove an ext_iff lemma (useful for rewriting)
 lemma ext_iff (m₁ m₂ : H0 G M) : m₁ = m₂ ↔ (m₁ : M) = (m₂ : M) := 
 begin
+  -- if you care about extensionality here's a way to do it.
   split,
   { rintro rfl, refl },
   { ext }
@@ -151,17 +152,14 @@ end
 example (m₁ m₂ m₃ : H0 G M) : m₁ + (m₂ - m₁ + m₃) = m₃ + m₂ :=
 begin
   -- which tactic?
-  abel
+  sorry
 end
 
 example (g : G) (m : H0 G M) : g • (m + m : M) = m + m :=
 begin
   -- can you help the simplifier?
-  simp [m.spec g],
+  sorry
 end
-
-
-
 
 end H0
 
@@ -196,8 +194,7 @@ def H0_underlying_function (φ : M →+[G] N) (a : H0 G M) : H0 G N :=
   -- use φ.map_smul and a.spec to prove that this map is well-defined.
   -- Remember that `rw` doesn't work under binders, and ∀ is a binder, so start
   -- with `intros`.
-  intros,
-  rw [←φ.map_smul, a.spec],
+  sorry
 end⟩
 
 /-- The group homomorphism  `H⁰(G,M) →+ H⁰(G,N)`
@@ -209,6 +206,7 @@ add_monoid_hom.mk'
 (H0_underlying_function φ)
 -- and then prove that this function preserves addition.
 begin
+  -- this is a bit of a mess, I'll do it.
   intros a b,
   simp only [H0_underlying_function],
   ext,
@@ -241,8 +239,7 @@ H⁰(G,M) ---------> H⁰(G,N)
 def H0_id : H0 (distrib_mul_action_hom.id G : M →+[G] M) =
   add_monoid_hom.id _ :=
 begin
-  ext x,
-  refl,
+  sorry,
 end
 
 variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
@@ -250,8 +247,8 @@ variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 def H0_comp (φ : M →+[G] N) (ψ : N →+[G] P) :
   H0 (ψ.comp φ) = ψ.H0.comp φ.H0 := 
 begin
-  ext x,
-  refl,
+  -- be sure to check out the proof in the solutions.
+  sorry
 end
 
 end distrib_mul_action_hom
@@ -283,11 +280,7 @@ variables {G M N P : Type}
 theorem H0_hom.left_exact (φ : M →+[G] N) (hφ : injective φ) : 
   injective φ.H0 :=
 begin
-  intros a b h,
-  ext, 
-  apply hφ,
-  rw H0.ext_iff at h,
-  simpa using h,
+  sorry
 end
 
 
@@ -296,28 +289,5 @@ theorem H0_hom.middle_exact (φ : M →+[G] N) (hφ : injective φ)
   (ψ : N →+[G] P) (he : is_exact φ ψ) : 
   φ.H0.range = ψ.H0.ker :=
 begin
-  ext x,
-  rw add_monoid_hom.mem_ker,
-  rw [H0.ext_iff, H0.coe_zero],
-  rw H0_coe_apply,
-  rw is_exact_def at he,
-  rw he,
-  rw add_monoid_hom.mem_range,
-  split,
-  { rintro ⟨a, rfl⟩,
-    exact ⟨a, rfl⟩ },
-  { rintro ⟨m, hmx⟩,
-    -- I claim `m` is G-invariant
-    have hm : ∀ (g : G), g • m = m,
-    { intro g,
-      apply hφ,
-      rw [φ.map_smul, hmx],
-      apply x.spec },
-    let a : _root_.H0 G M := ⟨m, hm⟩,
-    have ha : (a : M) = m := rfl,
-    use a,
-    ext,
-    -- next line not necessary as both proofs are `rfl`
-    rw [H0_coe_apply, ha],
-    exact hmx },
+  sorry,
 end
