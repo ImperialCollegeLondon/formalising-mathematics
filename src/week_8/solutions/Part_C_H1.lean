@@ -411,8 +411,8 @@ open add_monoid_hom
 
 -- right now will work around with sets
 
-theorem H1_hom_middle_exact (φ : M →+[G] N) (hφ : injective φ)
-  (ψ : N →+[G] P) (hψ : surjective ψ) (he : is_exact φ ψ) : 
+theorem H1_hom_middle_exact (φ : M →+[G] N)
+  (ψ : N →+[G] P) (hse : is_short_exact φ ψ) : 
   φ.H1.range = ψ.H1.ker :=
 begin
   -- need to prove a range is a kernel,
@@ -434,8 +434,7 @@ begin
     rw φ.map_comp,
     have hψφ : ψ.comp φ = (0 : M →+[G] P),
     { ext m,
-      simp,
-      rw is_exact_def' at he,
+      rw hse.is_exact_def' at he, -- no he any more, use hse
       rw set.ext_iff at he,
       simp * at * },
     rw ← mem_ker,
@@ -460,8 +459,9 @@ begin
     simp_rw ψ.Z1_spec at hy, 
     rw is_exact_def at he,
     cases hψ y with x hx,
-    let w : G → N := λ g, g • x - x,
-
+    let w : G → N := λ g, z g - (g • x - x),
+    have crucial : ∀ (g : G), ψ (z g - (g • x - x)) = 0,
+    { simp [hy, hx] },
     sorry }
 end
 #check is_exact_def
