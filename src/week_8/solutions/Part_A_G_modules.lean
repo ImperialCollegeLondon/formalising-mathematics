@@ -321,6 +321,32 @@ begin
   exact h2
 end
 
+/-
+
+Now let's make a proper API for is_short_exact
+
+-/
+
+namespace is_short_exact
+
+variables {φ} {ψ} (h : is_short_exact φ ψ)
+
+def injective : injective φ := h.2.1
+
+def surjective : surjective ψ := h.2.2
+
+def exact : is_exact φ ψ := h.1
+
+def exact_def : ∀ b : B, ψ b = 0 ↔ ∃ a : A, φ a = b := h.1
+
+-- now a noncomputable function defined by the axiom of choice
+noncomputable def random_section : C → B := λ c, classical.some (h.surjective c)
+
+lemma random_section_spec (c : C) : ψ (h.random_section c) = c :=
+classical.some_spec (h.surjective c)
+
+end is_short_exact
+
 end group
 
 /- 
