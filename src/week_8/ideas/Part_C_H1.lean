@@ -1,4 +1,4 @@
-import week_8.solutions.Part_B_H0
+import week_8.ideas.Part_B_H0
 import group_theory.quotient_group
 
 /-

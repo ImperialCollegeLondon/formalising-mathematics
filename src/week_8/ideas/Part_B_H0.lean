@@ -1,4 +1,4 @@
-import week_8.solutions.Part_A_G_modules
+import week_8.ideas.Part_A_G_modules
 
 /-
 

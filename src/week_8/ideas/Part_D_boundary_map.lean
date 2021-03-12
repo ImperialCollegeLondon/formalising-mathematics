@@ -1,4 +1,4 @@
-import week_8.solutions.Part_C_H1
+import week_8.ideas.Part_C_H1
 /-
 
 # Boundary maps
