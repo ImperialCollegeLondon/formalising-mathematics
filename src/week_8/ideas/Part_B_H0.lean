@@ -25,7 +25,7 @@ The system that makes this happen is called a coercion -- we coercing
 
 # Making the API for H⁰(G,M)
 
-If G is a group and M is a G-module then H⁰(G,M), or `H0 G M`, is the abelian
+If `G` is a group and `M` is a G-module then H⁰(G,M), or `H0 G M`, is the abelian
 group of G-invariant elements of `M`. We make the definition so we have
 to make the interface too. We show that `H0 G M` is an abelian group,
 define a coercion to `M` sending `m` to `↑m`, and define `m.spec` to be
@@ -212,13 +212,13 @@ variables {G M N : Type}
 
 /- The function underlying the group homomorphism `H⁰(G,M) → H⁰(G,N)`
    induced by a `G`-equivariant group homomorphism `φ : M →+[G] N` -/
-def H0_underlying_function (φ : M →+[G] N) (a : H0 G M) : H0 G N :=
-⟨φ a, begin
+def H0_underlying_function (φ : M →+[G] N) (m : H0 G M) : H0 G N :=
+⟨φ m, begin
   -- use φ.map_smul and a.spec to prove that this map is well-defined.
   -- Remember that `rw` doesn't work under binders, and ∀ is a binder, so start
   -- with `intros`.
   intros,
-  rw [←φ.map_smul, a.spec],
+  rw [←φ.map_smul, m.spec],
 end⟩
 
 /-- The group homomorphism  `H⁰(G,M) →+ H⁰(G,N)`
@@ -321,8 +321,8 @@ begin
   rw add_monoid_hom.mem_ker,
   rw [H0.ext_iff, H0.coe_zero],
   rw H0_coe_apply,
-  rw is_exact_def at he,
-  rw he,
+  rw is_exact.def at he,
+  rw ← he,
   rw add_monoid_hom.mem_range,
   split,
   { rintro ⟨a, rfl⟩,
