@@ -274,6 +274,8 @@ end
 
 variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 
+local infixr ` ∘ ` := distrib_mul_action_hom.comp
+
 def comp (φ : M →+[G] N) (ψ : N →+[G] P) :
   (ψ ∘ φ : M →+[G] P).H0 = ψ.H0.comp φ.H0 := 
 begin
