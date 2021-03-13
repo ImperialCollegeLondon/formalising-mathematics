@@ -2,6 +2,8 @@
 import tactic
 -- import the theory of G-module homomorphisms, for G a group
 import algebra.group_action_hom
+-- for the theory of sub-G-modules
+import group_theory.group_action.sub_mul_action
 
 /-
 
@@ -185,21 +187,19 @@ section Jobo_homework
 -- see KB post in live lean coding 11 Mar with API for
 -- `sub_distrib_mul_action`
 
-structure sub_distrib_mul_action
-  (G : Type) [monoid G]
-  (M : Type) [add_comm_group M] [distrib_mul_action G M]
-:=
--- the subset
-(to_set : set M)
--- the axioms (TODO)
-(foo : ∀ (g : G), ∀ m ∈ to_set, (g * g) • m = (0 : M))
+set_option old_structure_cmd true
+
+structure sub_distrib_mul_action (G M : Type)
+  [monoid G] [add_comm_group M]
+  [distrib_mul_action G M]
+extends sub_mul_action G M, add_subgroup M
 
 namespace sub_distrib_mul_action
 variables {G : Type} [monoid G]
 variables {M : Type} [add_comm_group M] [distrib_mul_action G M]
 variables {N : Type} [add_comm_group N] [distrib_mul_action G N]
 
-instance : has_coe (sub_distrib_mul_action G M) (set M) := ⟨to_set⟩
+instance : has_coe (sub_distrib_mul_action G M) (set M) := ⟨carrier⟩
 
 lemma ext {A B : sub_distrib_mul_action G M}
   (h : ∀ m : M, m ∈ (A : set M) ↔ m ∈ (B : set M)) :
@@ -222,16 +222,20 @@ variables {N : Type} [add_comm_group N] [distrib_mul_action G N]
 
 def ker (φ : M →+[G] N) :
   sub_distrib_mul_action G M := 
-by { refine_struct {to_set := {m : M | φ m = 0}},
+by { refine_struct {carrier := {m : M | φ m = 0}},
   try {repeat {sorry}} -- proofs missing
 }
 
 def range (φ : M →+[G] N) :
   sub_distrib_mul_action G N :=
-by { refine_struct {to_set := set.range φ},
+by { refine_struct {carrier := set.range φ},
   try {repeat {sorry}} -- proofs missing
 }
  
+-- now copy theorems from sub_mul_action if you want
+
+--now port subgroup and sub_mul_action
+
 end distrib_mul_action_hom
 
 /-
