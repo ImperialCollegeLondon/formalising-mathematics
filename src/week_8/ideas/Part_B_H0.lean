@@ -336,39 +336,6 @@ end
 
 
 -- H⁰(G,M) → H⁰(G,N) → H⁰(G,P) is exact, i.e. an image equals a kernel.
-theorem H0_hom.middle_exact (φ : M →+[G] N) (hφ : injective φ)
-  (ψ : N →+[G] P) (he : is_exact φ ψ) : 
-  φ.H0.range = ψ.H0.ker :=
-begin
-  ext x,
-  rw add_monoid_hom.mem_ker,
-  rw [H0.ext_iff, H0.coe_zero],
-  rw H0.coe_apply,
-  rw is_exact.def at he,
-  rw ← he,
-  rw add_monoid_hom.mem_range,
-  split,
-  { rintro ⟨a, rfl⟩,
-    exact ⟨a, rfl⟩ },
-  { rintro ⟨m, hmx⟩,
-    -- I claim `m` is G-invariant
-    have hm : ∀ (g : G), g • m = m,
-    { intro g,
-      apply hφ,
-      rw [φ.map_smul, hmx],
-      apply x.spec },
-    let a : _root_.H0 G M := ⟨m, hm⟩,
-    have ha : (a : M) = m := rfl,
-    use a,
-    ext,
-    -- next line not necessary as both proofs are `rfl`
-    rw [H0.coe_apply, ha],
-    exact hmx },
-end
-
--- modification of metahumors proof
-
--- H⁰(G,M) → H⁰(G,N) → H⁰(G,P) is exact, i.e. an image equals a kernel.
 theorem H0_hom.middle_exact' (φ : M →+[G] N) (hφ : injective φ)
   (ψ : N →+[G] P) (he : is_exact φ ψ) :
   φ.H0.range = ψ.H0.ker :=
@@ -377,17 +344,15 @@ begin
   rw is_exact.def at he,
   specialize he n,
   rw add_monoid_hom.mem_ker,
+  rw [H0.ext_iff, n.coe_apply, H0.coe_zero, ← he],
   split,
   { rintro ⟨y, rfl⟩,
-    ext,
-    simpa using he },
-  { intro hx,
-    rw [H0.ext_iff, n.coe_apply, H0.coe_zero, ← he] at hx,
-    obtain ⟨y, hy⟩ := hx,
+    exact ⟨y, rfl⟩ },
+  { rintro ⟨y, hy⟩,
     refine ⟨⟨y, _⟩, _⟩,
     { intro g,
       apply hφ,
       simpa [hy] using n.spec g },
     { ext,
-      simp [hy] } }
+      exact hy } }
 end
