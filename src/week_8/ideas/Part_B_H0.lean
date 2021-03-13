@@ -1,5 +1,26 @@
 import week_8.ideas.Part_A_G_modules
 
+
+/- 
+-- move this?
+# Coercions
+
+Something which will come up again and again in this workshop is
+the concept of a coercion. We have seen things which computer scientists
+call `φ : M →+[G] N` and we call "functions", but to Lean they are
+functions with baggage, which in this case is all the axioms and theorems
+attached to the theory of G-module homomorphisms (for example
+a proof of the theorem that `φ 0 = 0`). This means that `φ` itself is a
+pair consisting of a function and a whole bunch of extra stuff, and
+in particular `φ` is not a function (it's a function and more).
+The actual function `M → N` is called `⇑φ` by Lean, but we can just
+call it `φ` most of the time.
+
+The system that makes this happen is called a coercion -- we coercing
+`φ` to a function `⇑φ`. We will see other examples of coercions later.
+-/
+
+
 /-
 
 # Making the API for H⁰(G,M)
