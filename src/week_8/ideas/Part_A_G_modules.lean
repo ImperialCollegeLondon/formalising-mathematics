@@ -352,10 +352,10 @@ variables {P : Type} [add_comm_monoid P] [distrib_mul_action G P]
 variable (ψ : N →+[G] P) -- his is notation for `ψ : distrib_mul_action_hom G N P`
 
 -- let's make function composition notation
-local infixr ` ∘ ` := distrib_mul_action_hom.comp
+infixr ` ∘ᵍ `:90 := distrib_mul_action_hom.comp
 
 -- how to compose G-module maps
-example : M →+[G] P := ψ ∘ φ
+example : M →+[G] P := ψ ∘ᵍ φ
 
 -- You should think of φ and ψ as morphisms in the category
 -- of `G`-modules. They are functions, but they also have
@@ -367,10 +367,14 @@ example : M →+[G] P := ψ ∘ φ
 -- is "image = kernel" , which is highly category-theoretic.
 -- and functional evaluation often takes place after that.
 
--- The important fact is that `(ψ ∘ φ) m = ψ (φ m)`, as
+-- The important fact is that `(ψ ∘ᵍ φ) m = ψ (φ m)`, as
 -- terms of type `P`. Rather nicely, this theorem is called
 -- `ψ.comp_apply` but it is also a `simp` lemma, and 
 -- furthermore true by definition
+example (m : M) :
+  (ψ ∘ᵍ φ) m = ψ (φ m) := ψ.comp_apply φ m -- and `rfl` works too and `by simp`
+
+-- all works with function.comp too
 example (m : M) :
   (ψ ∘ φ) m = ψ (φ m) := ψ.comp_apply φ m -- and `rfl` works too and `by simp`
 

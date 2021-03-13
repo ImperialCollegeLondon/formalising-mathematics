@@ -268,10 +268,10 @@ variables {P : Type} [add_comm_monoid P] [distrib_mul_action G P]
 variable (ψ : N →+[G] P) -- his is notation for `ψ : distrib_mul_action_hom G N P`
 
 -- let's make function composition notation
-local infixr ` ∘ ` := distrib_mul_action_hom.comp
+infixr ` ∘ᵍ `:90 := distrib_mul_action_hom.comp
 
 -- how to compose G-module maps
-example : M →+[G] P := ψ ∘ φ
+example : M →+[G] P := ψ ∘ᵍ φ
 
 -- You should think of φ and ψ as morphisms in the category
 -- of `G`-modules. They are functions, but they also have
@@ -288,13 +288,16 @@ example : M →+[G] P := ψ ∘ φ
 -- `ψ.comp_apply` but it is also a `simp` lemma, and 
 -- furthermore true by definition
 example (m : M) :
-  (ψ ∘ φ) m = ψ (φ m) := ψ.comp_apply φ m -- and `rfl` works too and `by simp`
+  (ψ ∘ᵍ φ) m = ψ (φ m) := ψ.comp_apply φ m -- and `rfl` works too and `by simp`
 
+example (m : M) :
+  -- normal function composition
+  (ψ ∘ φ) m = ψ (φ m) := ψ.comp_apply φ m -- and `rfl` works too and `by simp`
 
 -- By the way, `squeeze_simp` is a version of `simp` which tells you 
 -- which rewrites it did. Give it a try!
 example :
-  (ψ ∘ φ) (g • (m1 + m2)) = g • (ψ (φ m1) + ψ (φ m2)) :=
+  (ψ ∘ᵍ φ) (g • (m1 + m2)) = g • (ψ (φ m1) + ψ (φ m2)) :=
 begin
   simp,
 end
@@ -321,7 +324,7 @@ variables {G M N P : Type}
 /-
 
 ### Stubbing out a theory
-
+ 
 I need to talk about kernels and images as G-module maps.
 Jobo is writing this. I just stub out the theory and
 sorry the proofs I need, but sorrying definitions comes
