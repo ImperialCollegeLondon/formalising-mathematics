@@ -518,18 +518,18 @@ classical.some_spec (h.surjective p)
 
 -- now the same sort of thing for the injection φ : M → N; this is
 -- the map from the image of φ back to M.
-noncomputable def inverse_φ (h : is_short_exact φ ψ) {n : N}
+noncomputable def inverse_φ (h : is_short_exact φ ψ) (n : N)
   (hn : ∃ m : M, φ m = n) : M :=
 classical.some hn
 
 @[simp]
 lemma inverse_φ_def (h : is_short_exact φ ψ) {n : N} (hn : ∃ m : M, φ m = n) :
-  φ (inverse_φ h hn) = n :=
+  φ (h.inverse_φ n hn) = n :=
 classical.some_spec hn
 
 -- injectivity implies it's independent of choice, but we used choice anyway
 @[simp] lemma inverse_φ_spec (h : is_short_exact φ ψ) {n : N} {m : M}
-  (hm : φ m = n) : h.inverse_φ ⟨m, hm⟩ = m :=
+  (hm : φ m = n) : h.inverse_φ _ ⟨m, hm⟩ = m :=
 begin
   apply h.injective,
   rw hm,

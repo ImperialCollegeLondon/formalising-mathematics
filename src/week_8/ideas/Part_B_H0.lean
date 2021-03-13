@@ -365,3 +365,28 @@ begin
     rw [H0.coe_apply, ha],
     exact hmx },
 end
+
+-- H⁰(G,M) → H⁰(G,N) → H⁰(G,P) is exact, i.e. an image equals a kernel.
+theorem H0_hom.middle_exact' (φ : M →+[G] N) (hφ : injective φ)
+  (ψ : N →+[G] P) (he : is_exact φ ψ) :
+  φ.H0.range = ψ.H0.ker :=
+begin
+  ext x,
+  rw is_exact.def at he,
+  specialize he x,
+  rw add_monoid_hom.mem_ker,
+  split,
+  { rintro ⟨y, rfl⟩,
+    ext,
+    simpa using he },
+  { intro hx,
+    have hx' := congr_arg (coe : H0 G P → P) hx,
+    simp only [← he, H0.coe_zero, H0.coe_apply] at hx',
+    obtain ⟨y, hy⟩ := hx',
+    refine ⟨⟨y, _⟩, _⟩,
+    { intro g,
+      apply hφ,
+      simpa [hy] using x.spec g },
+    { ext,
+      simp [hy] } }
+end

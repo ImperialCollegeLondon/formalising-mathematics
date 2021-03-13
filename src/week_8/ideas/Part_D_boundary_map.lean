@@ -52,7 +52,7 @@ include hse
 noncomputable def raw_boundary_function : H0 G P → (G → M) :=
 λ p g, hse.inverse_φ (g • (hse.inverse_ψ p) - hse.inverse_ψ p) 
 begin
-  rw ← hse.exact_def,
+  rw hse.exact_set,
   simp [hse.inverse_ψ_spec, p.spec],
 end
 
@@ -75,7 +75,7 @@ noncomputable def delta : H0 G P →+ H1 G M :=
     rw H1.ker_quotient,
     simp [raw_boundary_function],
     refine ⟨hse.inverse_φ (hse.inverse_ψ 0) _, _⟩,
-    { rw ← hse.exact_def,
+    { rw hse.exact_set,
       rw hse.inverse_ψ_spec },
     ext g,
     simp,
@@ -89,7 +89,7 @@ noncomputable def delta : H0 G P →+ H1 G M :=
     rw H1.ker_quotient,
     have crucial :
       ∃ m : M, φ m = hse.inverse_ψ (↑p + ↑q) - hse.inverse_ψ p - hse.inverse_ψ q,
-    { simp [← hse.exact_def] },
+    { simp [hse.exact_set] },
     refine ⟨hse.inverse_φ _ crucial, _⟩,
     ext g,
     simp [cochain_map, Z1.coe_add, raw_boundary_function],
@@ -111,8 +111,6 @@ of group cohomology associated to a short exact sequence of
 G-modules.
 
 TODO
-
-boundary map def
 
 boundary map API
 
