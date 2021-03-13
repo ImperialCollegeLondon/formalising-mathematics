@@ -14,72 +14,122 @@ of `M`, or in other words an action `•` of `G` on `M` (in the sense
 of groups acting on sets/types) satisfying
 the axiom `smul_add g m n : g • (m + n) = g • m + g • n`.
 
+The goal of this workshop will be to set up a cohomology theory
+for G-modules. We will just do H⁰ (G-invariant elements)
+and H¹ (1-cocycles modulo coboundaries), but clearly one
+could go on to 2-cocycles, n-cocycles etc.
+
 ### typeclass comments ("will it work for monoids/add_monoids?")
 
 Note that the definition of G-module does not mention `g⁻¹` at all, so
 we can even define it for monoids `G`, which we will. Loads
-of the theory works for `G` a monoid. I've been working on `H¹(G,M)` today
-and it all works for monoids. But we use subtraction on `M` quite a
-lot in practice when we get to `H¹` (e.g. `g b - b`) so I've assumed
-that `M` is an abelian group throughout for pedagogical reasons
-(and because it solved some typeclass issue at some point).
+of the theory works for `G` a monoid in fact (certainly everything
+we do in this workshop). But we use subtraction on `M` quite a
+lot in practice when we get to `H¹` (e.g. the coboundary `g b - b`
+needs subtraction) so I've assumed that `M` is an abelian group throughout for
+pedagogical reasons (and because it solved some typeclass issue at some point).
 
+The `G`-module structure on `M` is called `distrib_mul_action G M` in Lean.
 -/
 
-section distrib_mul_action
+section distrib_mul_action_stuff
 
 /- 
 
 ## The interface for G-modules, i.e. the theory of `•`
 
-In Lean we define the `•` notation for a `G`-action on `M`
-with the typeclass `[distrib_mul_action G M]`, which gives us the
-notation and all the axioms.
+In Lean we learn about the typeclass `[distrib_mul_action G M]`, 
+which gives us the notation `•` for an action of `G` on `M`,
+and all the axioms.
 
 Notation for this section:
 
-Let `G` be a group (or just a monoid) (with notation `*`).
-Let `M` be an abelian group (with notation `+`) and 
-let `M` be a `G`-module (with notation `•`).
+Let `G` be a group. Let `M` be an abelian group and furthermore
+assume `M` is a `G`-module. We use the usual notation `(g₁ * g₂) • (m₁ + m₂)`
 
 -/
 
-variables {G M : Type}
-  [monoid G] --`*`
-  [add_comm_group M] --`+`
+variables
+  {G : Type} [monoid G] --`*`
+  {M : Type} [add_comm_group M] --`+`
   [distrib_mul_action G M] --`•`
 
--- Let `g`'ish variables be elements of `G`, and let `m`ish variables be elements of `M`.
-variables (g g₁ g₂ : G) (m m₁ m₂ : M)
+-- Let `g`'ish variables be elements of `G`, and let `m`ish variables be
+-- elements of `M`.
+variables (g g1 g2 g₁ g₂ : G) (m m1 m2 m₁ m₂ : M)
 
 /-
 
-### The API for `•`
+### The interface for `•`
 
-Below are the names of the theorems which you will need
+Below are the names of the theorem proofs which you will need
 to know when manipulating an element of a fixed `G`-module,
-for example `(g₁ * g₂) • (m₁ + m₂)`.
+for example the element `(g₁ * g₂) • (m₁ + m₂)`.
 
-They are written like this:
+I have explained the names of the proofs in the form
+of examples. The syntax for the examples is this:
 
-`example : Theorem_statement := theorem_proof_function input1 input2 ...`
+`example : <Theorem statement> := <name of proof function> input1 input2 ...`
 
 So these examples tell you the names of the proofs of the theorems.
 The proofs are functions which need inputs, and the inputs are
-the variables used in the theorem statement.
+the variables used in the theorem statement. I also mention
+whether Lean's "rw-machine" (the `simp` tactic) knows about these theorems.
 
 -/
+
+
 
 example : g • (0 : M) = 0 := smul_zero g -- a simp lemma
 example : g • (m₁ + m₂) = g • m₁ + g • m₂ := smul_add g m₁ m₂ -- a simp lemma 
 example : g • (-m) = -(g • m) := smul_neg g m -- a simp lemma
 example : (1 : G) • m = m := one_smul G m -- a simp lemma
-example : (g₁ * g₂) • m = g₁ • (g₂ • m) := mul_smul g₁ g₂ m -- not a simp lemma
-example : g • (m₁ - m₂) = g • m₁ - g • m₂ := smul_sub g m₁ m₂ -- is it a simp lemma?
+-- at the time of writing, this is not a simp lemma.
+example : g • (m₁ - m₂) = g • m₁ - g • m₂ := smul_sub g m₁ m₂
+example : (g₁ * g₂) • m = g₁ • g₂ • m := mul_smul g₁ g₂ m -- not a simp lemma
+
+end distrib_mul_action_stuff
+/-
+
+### Entirely optional digression on `simp`
+
+Some of those lemmas above were "simp lemmas" (if you `#print one_smul`
+you'll see it has a `@[simp]` tag). What makes a good simp lemma?
+
+The most important rule is that, unless you really know what you're
+doing, it should be of the form `A = B` or `A ↔ B`.
+
+The second rule is that the right hand side should in some sense
+be "simpler than" the left hand side.
+so the lemma should say `A simplifies_to B`, indicating a flow towards
+a solution.
+
+For example `one_mul : 1 * a = a` is a `simp` lemma for groups (and
+for monoids), because it is an equality, and the right hand side
+is unarguably simpler than the left hand side. 
+
+Later on we'll be making some of our own structures, and
+we will want to train Lean's simplifier to use those structures. The better
+you understand how the simplifier works on your structures, the easier you
+will find it to type "mathematics as the mathematician thinks about it"
+into Lean.
+
+-/
 
 /-
 
-## The `simp` tactic
+KB note to self: Some people think `smul_add`
+`g • (m₁ + m₂) = g • m₁ + g • m₂`
+is a good simp lemma. I should experiment with `simp` here perhaps
+or maybe just ask how to do it.
+
+should mul_smul be a simp lemma?
+
+-/
+
+/-
+
+### The `simp` tactic
 
 A lemma is, by definition, a `simp` lemma, if its proof term is tagged
 with the `@[simp]` attribute (you can check a term's attributes with `#print`)
@@ -116,32 +166,79 @@ Note however that it *cannot use hypotheses*. It will only
 prove identities which are true in all abelian groups. 
 
 -/
+example (M : Type) [add_comm_group M] (a b c : M) :
+  a + (c + -b) = (a - b) + c := by abel
 
-
-end distrib_mul_action
 
 /-
 
-## Advanced exercise
+## @JoBo's homework -- the interface for sub-G-modules
 
 Lean also has G-invariant subsets (`sub_mul_action G A`)
-but not G-invariant subgroups. It is well-understood how
-to set these things up, both the definitions and the API
-are standard, and one key theorem to aim for is that G-invariant subgroups
-are a complete lattice, whose proof could perhaps go via a Galois
-correspondence with G-invariant subsets or subgroups (or both?)
+but not G-invariant subgroups, rather annoyingly. Hopefully
+@jobo is going to make this stuff.
 
-This would be a really cool project if someone wanted to try on a branch of
-the course project this week. There's probably a ton of API
-which could be done. If you are interested in submitting
-some Lean work which you've done as a result of this workshop and
-are happy to put on public display then
-check out the README for how to submit it. The only rule is:
-NO ERRORS!
+-/
+section Jobo_homework
 
-Right now I am not using G-invariant subgroups in my development of H¹,
-but things might change.
+-- **TODO** copy post here
+-- see KB post in live lean coding 11 Mar with API for
+-- `sub_distrib_mul_action`
 
+structure sub_distrib_mul_action
+  (G : Type) [monoid G]
+  (M : Type) [add_comm_group M] [distrib_mul_action G M]
+:=
+-- the subset
+(to_set : set M)
+-- the axioms (TODO)
+(foo : ∀ (g : G), ∀ m ∈ to_set, (g * g) • m = (0 : M))
+
+namespace sub_distrib_mul_action
+variables {G : Type} [monoid G]
+variables {M : Type} [add_comm_group M] [distrib_mul_action G M]
+variables {N : Type} [add_comm_group N] [distrib_mul_action G N]
+
+instance : has_coe (sub_distrib_mul_action G M) (set M) := ⟨to_set⟩
+
+theorem ext_iff (A B : sub_distrib_mul_action G M) :
+  A = B ↔ ∀ m : M, m ∈ (A : set M) ↔ m ∈ (B : set M) := sorry
+
+end sub_distrib_mul_action
+
+namespace distrib_mul_action_hom
+
+variables {G : Type} [monoid G]
+variables {M : Type} [add_comm_group M] [distrib_mul_action G M]
+variables {N : Type} [add_comm_group N] [distrib_mul_action G N]
+
+def ker (φ : M →+[G] N) :
+  sub_distrib_mul_action G M := 
+by { refine_struct {to_set := {m : M | φ m = 0}},
+  try {repeat {sorry}} -- proofs missing
+}
+
+def range (φ : M →+[G] N) :
+  sub_distrib_mul_action G N :=
+by { refine_struct {to_set := set.range φ},
+  try {repeat {sorry}} -- proofs missing
+}
+ 
+end distrib_mul_action_hom
+
+/-
+TODO
+
+G-invariant subgroups are a complete lattice.
+
+Proof could perhaps go via a Galois correspondence with either
+G-invariant subsets or subgroups (or both?).
+
+-/
+
+end Jobo_homework
+
+/-
 ## The interface for morphisms of G-modules, i.e. the theory of `→+[_]`
 
 Lean uses notation `M →+[G] N` and name `distrib_mul_action_hom`,
@@ -150,13 +247,13 @@ background for you.
 
 The type of G-module homs from `M` to `N`, i.e. the set
 that a mathematician would call something like $$\Hom_G(M,N)$$,
-is in Lean called `M →+[G] N`. This is notation for the `distrib_mul_action_hom`
-function, which is why you see this word in namespaces and
-sections sometimes, but hopefully you will never need to type it yourself.
+is in Lean called `M →+[G] N`. The non-notation name for this function
+type is `distrib_mul_action_hom G M N`, which is why you see this word in
+namespaces or mentioned in sections.
 
 Terms of this type are `G`-module morphisms from `M` to `N`.
 So when we see `φ : M →+[G] N` it means that `φ` is a G-module hom
-from `M` to `N`. We will often only be seeing `φ` in terms of its
+from `M` to `N`. We will often only be using `φ` only in terms of its
 associated function `⇑φ : M → N`. `φ` itself is a package, consisting
 of a function and a bunch of theorems about that function.
 
@@ -164,39 +261,37 @@ of a function and a bunch of theorems about that function.
 
 namespace distrib_mul_action_hom
 
--- Let M and N be G-modules
+-- let's do the variables
 variables 
--- G, A B are sets, or types, they're the same
-{G M N : Type}
-  [monoid G] -- `*` on G
-  [add_comm_monoid M] [add_comm_monoid N] -- `+` on A and B
-  [distrib_mul_action G M] [distrib_mul_action G N] -- `•` G-actions on A and B
+-- let `G` be a group (or a monoid)
+{G : Type} [monoid G]
 
+{M : Type}  [add_comm_group M] [distrib_mul_action G M] -- let `M` be a `G`-module
+{N : Type}  [add_comm_group N] [distrib_mul_action G N] -- let `N` be a `G`-module
+(φ : M →+[G] N) -- let φ be a morphism of G-modules
+(g : G) (m m₁ m₂ m1 m2 : M) -- random useful variable names
 
 /-
 
 ### API for `M →+[G] N`
 
 Here are the names of the proofs of the basic axioms for G-module
-morphisms.
+morphisms. The proofs are in the `→+[_]` namespace, so you can
+write things like `φ.map_smul` to access them easily.
 
 -/
-variables 
--- let φ be a morphism of G-modules
-(φ : M →+[G] N)
--- random useful variable names
-(g : G) (m m₁ m₂ : M) 
-
 example : φ (g • m) = g • (φ m) := φ.map_smul g m -- a simp lemma
 example (m₁ m₂ : M) : φ (m₁ + m₂) = φ m₁ + φ m₂ := φ.map_add m₁ m₂ -- a simp lemma
 
-example : φ (g • (m₁ + m₂)) = g • φ m₁ + g • φ m₂ :=
+example : φ (g • (m1 + m2)) = g • φ m1 + g • φ m2 :=
 begin
   -- what will you rewrite? Will you rewrite at all?
   rw φ.map_smul,
   rw φ.map_add, 
   rw smul_add,
   -- or just `simp` will do it
+  -- Moral : `simp` right now is being trained to "push functions further in"
+  -- and this must be the `simp` normal form.
 end
 /-
 
@@ -231,24 +326,46 @@ example : φ 0 = 0 := φ.map_zero
 example : φ 0 = 0 := by simp
 
 
--- You know how to compose functions, you just write `ψ (φ a)`
--- or whatever. Composition in the category of G-modules is
--- done with the `comp` method for `G`-module morphisms.
+/-
 
+### Composition of G-module morphisms
+
+You know how to compose functions, you just write `ψ (φ a)`
+or whatever. Composition in the category of G-modules is
+done with the `comp` method for `G`-module morphisms.
+
+-/
 
 -- let P be another G-module
 variables {P : Type} [add_comm_monoid P] [distrib_mul_action G P]
 
+-- Recall `φ : M →+[G] N` from earlier.
+-- let ψ : N → P be another G-module morphism
+variable (ψ : N →+[G] P) -- his is notation for `ψ : distrib_mul_action_hom G N P`
+
+-- let's make function composition notation
+local infixr ` ∘ ` := distrib_mul_action_hom.comp
+
 -- how to compose G-module maps
-example (φ : M →+[G] N) (ψ : N →+[G] P) : M →+[G] P := ψ.comp φ
+example : M →+[G] P := ψ ∘ φ
 
--- the proof of the theorem that composition of G-module maps evaluate
--- in the expected way is called `ψ.comp_apply` but it is also true
--- by definition and a `simp` lemma
-example (φ : M →+[G] N) (ψ : N →+[G] P) (m : M) :
-  ψ.comp φ m = ψ (φ m) := ψ.comp_apply φ m -- and `rfl` works too and `by simp`
+-- You should think of φ and ψ as morphisms in the category
+-- of `G`-modules. They are functions, but they also have
+-- some extra category-theoretic baggage (proofs that they
+-- are G-linear maps) which needs to be moved around.
 
-variable (ψ : N →+[G] P)
+-- KB NOTE TO SELF do we ever actually compose morphisms?
+-- My definition of short exact sequence of G-modules
+-- is "image = kernel" , which is highly category-theoretic.
+-- and functional evaluation often takes place after that.
+
+-- The important fact is that `(ψ ∘ φ) m = ψ (φ m)`, as
+-- terms of type `P`. Rather nicely, this theorem is called
+-- `ψ.comp_apply` but it is also a `simp` lemma, and 
+-- furthermore true by definition
+example (m : M) :
+  (ψ ∘ φ) m = ψ (φ m) := ψ.comp_apply φ m -- and `rfl` works too and `by simp`
+
 
 -- By the way, `squeeze_simp` is a version of `simp` which tells you 
 -- which rewrites it did. Give it a try!
@@ -260,30 +377,44 @@ end
 
 end distrib_mul_action_hom
 
-section group
+section exactness_stuff
 
--- Let A and B be G-modules
-variables {G A B C : Type}
-  [monoid G] [add_comm_group A] [add_comm_group B] [add_comm_group C]
-  [distrib_mul_action G A] [distrib_mul_action G B] [distrib_mul_action G C]
+/-
 
-def is_exact (φ : A →+[G] B) (ψ : B →+[G] C) : Prop :=
-∀ b : B, ψ b = 0 ↔ ∃ a : A, φ a = b   
+## Developing a basic API for exact sequences
 
-lemma is_exact_def (φ : A →+[G] B) (ψ : B →+[G] C) :
-  is_exact φ ψ ↔ ∀ b : B, ψ b = 0 ↔ ∃ a : A, φ a = b :=
-iff.rfl
+This is relatively straightforward and a nice
+beginner exercise.
 
--- you'll need to know about the sets API to do this,
--- as covered for example in earlier parts of this course.
+-/
+-- Let M, N and P be G-modules
+variables {G M N P : Type}
+  [monoid G] [add_comm_group M] [add_comm_group N] [add_comm_group P]
+  [distrib_mul_action G M] [distrib_mul_action G N] [distrib_mul_action G P]
+
+-- I don't know which definition is best. This is the slickest for sure.
+definition is_exact (φ : M →+[G] N) (ψ : N →+[G] P) : Prop :=
+φ.range = ψ.ker
+
+@[simp] lemma is_exact.def0 (φ : M →+[G] N) (ψ : N →+[G] P) :
+  is_exact φ ψ ↔ φ.range = ψ.ker := iff.rfl
+
+@[simp] lemma is_exact.def (φ : M →+[G] N) (ψ : N →+[G] P) :
+  is_exact φ ψ ↔ ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
+begin
+  rw is_exact.def0,
+  rw sub_distrib_mul_action.ext_iff, 
+  refl,
+end
+
 -- Switch your infoview filter onto "only props" to get the noise
 -- out of the way.
-lemma is_exact_def' (φ : A →+[G] B) (ψ : B →+[G] C) :
-  is_exact φ ψ ↔ ψ ⁻¹' {c : C | c = 0} = set.range φ :=
+
+-- this is the wrong way around, it should be removed.
+lemma is_exact_def' (φ : M →+[G] N) (ψ : N →+[G] P) :
+  is_exact φ ψ ↔ ψ.ker = φ.range :=
 begin
-  rw is_exact_def, -- LHS : let's see what we have
-  rw set.ext_iff, -- RHS : extensionality for sets in handy rewrite form
-  -- now we see both sides say the same thing by definition,
+  rw eq_comm,
   refl,
 end
 
@@ -293,77 +424,118 @@ end
 
 Mathematicians have about three different ways of saying
 a sequence is exact, and they're all "the definition".
-That's why I proved the last two lemmas -- so we can use whichever
+That's why I proved the last few lemmas -- so we can use whichever
 of the definitions is most use to us at the time. 
 
 -/
 
+/-
+
+## Making an API for short exact sequences.
+-/
 open function
 
-def is_short_exact (φ : A →+[G] B) (ψ : B →+[G] C) : Prop :=
+-- This will do for an internal definition. The user should
+-- never have to think about that though.
+def is_short_exact (φ : M →+[G] N) (ψ : N →+[G] P) : Prop :=
   is_exact φ ψ ∧ injective φ ∧ surjective ψ
 
-variables (φ : A →+[G] B) (ψ : B →+[G] C)
+-- We need to make a nice API for this, it's easy and fun.
 
--- useful for rewrites
-lemma is_short_exact_def :
+variables (φ : M →+[G] N) (ψ : N →+[G] P)
+
+-- useful for rewrites when we're making the API.
+protected lemma is_short_exact_def :
   is_short_exact φ ψ ↔ is_exact φ ψ ∧ injective φ ∧ surjective ψ :=
 -- true by definition
 iff.rfl
 
--- Get some practice pulling off sub-facts from this compound fact.
-example : is_short_exact φ ψ → injective φ :=
-begin
-  intro h,
-  rw is_short_exact_def at h,
-  cases h with h1 h23,
-  cases h23 with h2 h3,
-  exact h2
-end
+-- I marked it protected because the end user should never have
+-- to use this lemma in this repo.
 
-/-
-
-Now let's make a proper API for is_short_exact
-
--/
-
+-- Now the proper API
 namespace is_short_exact
 
 variables {φ} {ψ} (h : is_short_exact φ ψ)
 
-def injective : injective φ := h.2.1
+include h
+def injective : injective φ := --h.2.1
+begin
+  /- put your infoview filter onto only props.
+     You see
 
-def surjective : surjective ψ := h.2.2
+     h: is_short_exact φ ψ
+     ⊢ injective ⇑φ
+  
+     That's the question. You can take `h` apart
+     with `cases`, and even more effectively with
+     `rcases`.
+  -/
+  rcases h with ⟨_, _, _⟩,
+  assumption
+end
 
-def exact : is_exact φ ψ := h.1
 
-def exact_def : ∀ b : B, ψ b = 0 ↔ ∃ a : A, φ a = b := h.1
+def surjective : surjective ψ := -- h.2.2
+begin
+  exact h.2.2
+end
 
--- now a noncomputable function defined by the axiom of choice
-noncomputable def inverse_ψ : C → B := λ c, classical.some (h.surjective c)
+-- again we don't really want the user messing
+-- with this internal function, it should be thought
+-- of as "an abbreviation for several things".
+protected def exact : is_exact φ ψ := h.1
 
-@[simp] lemma inverse_ψ_spec (c : C) : ψ (h.inverse_ψ c) = c :=
-classical.some_spec (h.surjective c)
+--@[simp] lemma is_exact_def0 (φ : M →+[G] N) (ψ : N →+[G] P) :
+--  is_exact φ ψ ↔ φ.range = ψ.ker
 
-noncomputable def inverse_φ (h : is_short_exact φ ψ) (b : B) (hb : ∃ a : A, φ a = b) : A :=
-classical.some hb
+--@[simp] lemma is_exact_def (φ : M →+[G] N) (ψ : N →+[G] P) :
+--  is_exact φ ψ ↔ ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
+
+def exact_def : ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
+begin
+  rw ← is_exact.def,
+  exact h.exact
+end
+
+def exact_def0 : φ.range = ψ.ker :=
+begin
+  rw ← is_exact.def0,
+  -- different uses of word!
+  exact h.exact,
+end
+
+-- now a noncomputable function defined by the axiom of choice,
+-- a random splitting of the surjection ψ : P → N and hence a one-sided
+-- inverse
+noncomputable def inverse_ψ : P → N := λ p, classical.some (h.surjective p)
+
+@[simp] lemma inverse_ψ_spec (p : P) : ψ (h.inverse_ψ p) = p :=
+classical.some_spec (h.surjective p)
+
+-- now the same sort of thing for the injection φ : M → N; this is
+-- the map from the image of φ back to M.
+noncomputable def inverse_φ (h : is_short_exact φ ψ) {n : N}
+  (hn : ∃ m : M, φ m = n) : M :=
+classical.some hn
 
 @[simp]
-lemma inverse_φ_def (h : is_short_exact φ ψ) {b : B} (hb : ∃ a : A, φ a = b) :
-  φ (inverse_φ h b hb) = b :=
-classical.some_spec hb
+lemma inverse_φ_def (h : is_short_exact φ ψ) {n : N} (hn : ∃ m : M, φ m = n) :
+  φ (inverse_φ h hn) = n :=
+classical.some_spec hn
 
-lemma inverse_φ_spec (h : is_short_exact φ ψ) {b : B} {a : A} (ha : φ a = b) :
-  h.inverse_φ b ⟨a, ha⟩ = a :=
+-- injectivity implies it's independent of choice, but we used choice anyway
+@[simp] lemma inverse_φ_spec (h : is_short_exact φ ψ) {n : N} {m : M} (hm : φ m = n) :
+  h.inverse_φ ⟨m, hm⟩ = m :=
 begin
   apply h.injective,
-  rw ha,
-  exact classical.some_spec ⟨a, ha⟩,
+  rw hm,
+  exact classical.some_spec ⟨m, hm⟩,
 end
 
 end is_short_exact
 
-end group
+end exactness_stuff
 
 /- 
 # Coercions
