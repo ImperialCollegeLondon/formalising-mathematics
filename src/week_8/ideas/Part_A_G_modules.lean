@@ -440,9 +440,30 @@ of the definitions is most use to us at the time.
 /-
 
 ## Making an API for short exact sequences.
+
+This is really easy.
+
 -/
 open function
 
+/-- Fundamental to cohomology theory is the concept of a short
+exact sequence. If `φ : M →+[G] N` and
+`ψ : N →+[G] P` are G-module morphisms, `is_short_exact φ ψ` 
+is the proposition stating that `0 → M -φ→ N -ψ→ P → 0` is short exact
+in the usual sense, that is:
+
+*) `φ` is injective, 
+*) the range of `φ` equals the kernel of `ψ`,
+*) `ψ` is surjective. 
+
+If `h : is_short_exact φ ψ` then you can access various standard
+facts about `φ` and `ψ` using dot notation with `h`. For example
+`h.injective` is the proof that `φ` is injective, and 
+`h.exact_set` is the proof of some expanded-out version of the
+statement that an element `n` is in the image
+of `φ` if and only if it is in the kernel of `ψ`. A rather more
+compact definition is `h.exact_cat`.
+-/
 -- This will do for an internal definition. The user should
 -- never have to think about that though.
 def is_short_exact (φ : M →+[G] N) (ψ : N →+[G] P) : Prop :=
@@ -452,17 +473,21 @@ def is_short_exact (φ : M →+[G] N) (ψ : N →+[G] P) : Prop :=
 
 variables (φ : M →+[G] N) (ψ : N →+[G] P)
 
--- useful for rewrites when we're making the API.
+-- useful for rewrites when we're making the API, but the user
+-- should never see this.
 protected lemma is_short_exact_def :
   is_short_exact φ ψ ↔ is_exact φ ψ ∧ injective φ ∧ surjective ψ :=
 -- true by definition
 iff.rfl
 
 -- I marked it protected because the end user should never have
--- to use this lemma in this repo.
+-- to use this lemma in this repo, they should always use the `h.injective`
+-- dot notation.
 
 -- Now the proper API
 namespace is_short_exact
+
+-- We are making the API so we are allowed to unfold stuff
 
 variables {φ} {ψ} (h : is_short_exact φ ψ)
 
@@ -500,13 +525,13 @@ protected def exact : is_exact φ ψ := h.1
 --@[simp] lemma is_exact_def (φ : M →+[G] N) (ψ : N →+[G] P) :
 --  is_exact φ ψ ↔ ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
 
-def exact_def : ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
+def exact_set : ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
 begin
   rw ← is_exact.def,
   exact h.exact
 end
 
-def exact_def0 : φ.range = ψ.ker :=
+def exact_cat : φ.range = ψ.ker :=
 begin
   rw ← is_exact.def0,
   -- different uses of word!
@@ -544,21 +569,3 @@ end
 end is_short_exact
 
 end exactness_stuff
-
-/- 
-# Coercions
-
-Something which will come up again and again in this workshop is
-the concept of a coercion. We have seen things which computer scientists
-call `φ : M →+[G] N` and we call "functions", but to Lean they are
-functions with baggage, which in this case is all the axioms and theorems
-attached to the theory of G-module homomorphisms (for example
-a proof of the theorem that `φ 0 = 0`). This means that `φ` itself is a
-pair consisting of a function and a whole bunch of extra stuff, and
-in particular `φ` is not a function (it's a function and more).
-The actual function `M → N` is called `⇑φ` by Lean, but we can just
-call it `φ` most of the time.
-
-The system that makes this happen is called a coercion -- we coercing
-`φ` to a function `⇑φ`. We will see other examples of coercions later.
--/
