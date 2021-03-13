@@ -267,6 +267,9 @@ of a function and a bunch of theorems about that function.
 
 -/
 
+-- let's make function composition notation
+infixr ` ∘ᵍ `:90 := distrib_mul_action_hom.comp
+
 namespace distrib_mul_action_hom
 
 -- let's do the variables
@@ -350,9 +353,6 @@ variables {P : Type} [add_comm_monoid P] [distrib_mul_action G P]
 -- Recall `φ : M →+[G] N` from earlier.
 -- let ψ : N → P be another G-module morphism
 variable (ψ : N →+[G] P) -- his is notation for `ψ : distrib_mul_action_hom G N P`
-
--- let's make function composition notation
-infixr ` ∘ᵍ `:90 := distrib_mul_action_hom.comp
 
 -- how to compose G-module maps
 example : M →+[G] P := ψ ∘ᵍ φ
