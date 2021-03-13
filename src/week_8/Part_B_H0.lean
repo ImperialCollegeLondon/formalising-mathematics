@@ -251,7 +251,7 @@ Given a G-module map `φ : M →+[G] N`, The following diagram commutes:
   |                   |
 H⁰(G,M) ---------> H⁰(G,N)
 -/
-@[simp] lemma coe_apply (φ : M →+[G] N) (m : H0 G M) :
+@[simp] lemma coe_apply (m : H0 G M) (φ : M →+[G] N) :
   ((φ.H0 m) : N) = φ m :=
 begin
   -- Look at the goal the way I have written it.
@@ -274,10 +274,8 @@ end
 
 variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 
-local infixr ` ∘ ` := distrib_mul_action_hom.comp
-
 def comp (φ : M →+[G] N) (ψ : N →+[G] P) :
-  (ψ ∘ φ : M →+[G] P).H0 = ψ.H0.comp φ.H0 := 
+  (ψ ∘ᵍ φ).H0 = ψ.H0.comp φ.H0 := 
 begin
   -- be sure to check out the proof in the solutions.
   sorry

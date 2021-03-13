@@ -225,8 +225,9 @@ end
 -- it's a functor
 variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 
+
 def map_comp (φ: M →+[G] N) (ψ : N →+[G] P) (z : _root_.Z1 G M) :
-  (ψ.Z1) ((φ.Z1) z) = (ψ.comp φ).Z1 z :=
+  (ψ.Z1) ((φ.Z1) z) = (ψ ∘ᵍ φ).Z1 z :=
 begin
   -- what do you think?
   sorry
@@ -236,7 +237,7 @@ end
   φ.Z1 a g = φ (a g) := rfl
 
 @[simp] lemma Z1_spec' (φ : M →+[G] N) (a : _root_.Z1 G M) (g : G) : 
-  (φ.Z1 a : G → N) = (φ ∘ a) := rfl
+  (φ.Z1 a : G → N) = ((φ : M → N) ∘ a) := rfl
   
 end distrib_mul_action_hom
 
@@ -265,6 +266,7 @@ end cochain_map
 -- `f : A → B` is a group hom, how do I make the type coker f`
 
 -- Lean has inbuilt quotients of additive abelian groups by subgroups
+-- so we just take the quotient by the range
 @[derive add_comm_group] 
 def H1 (G M : Type) [monoid G] [add_comm_group M]
   [distrib_mul_action G M] : Type :=
@@ -301,11 +303,12 @@ We have just defined `H1 G M` as a quotient group, and told Lean
 to figure out (or "derive") the obvious abelian group structure
 on it, which it did.
 
-What we need to do now is to show that if `φ : M →+[G] N` is a `G`-module
+If you want to go any further, check out the `ideas` directory.
+
+In there we show that if `φ : M →+[G] N` is a `G`-module
 hom then `φ` induces a map `H1 G M → H1 G N`. To prove this we will
 need to figure out how to define maps from and to quotient group structures.
 Just like last week, this is simply a matter of learning the API for the
 definition `quotient_add_group.quotient`.
 
-TODO -- make the definition
 -/

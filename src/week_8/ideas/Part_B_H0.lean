@@ -236,46 +236,69 @@ begin
   simp,
 end
 
+end distrib_mul_action_hom
+
+-- The API for `φ.H0` starts here
+
+namespace H0
+
+variables {G M N : Type}
+  [monoid G] [add_comm_group M] [add_comm_group N]
+  [distrib_mul_action G M] [distrib_mul_action G N]
+  (a : M) (b : N)
+
 /-
+
+## An API for `φ.H0`
+
 So now if `φ : M →+[G] N` is a G-module homomorphism, we can talk
 about `φ.H0 : H0 G M →+ H0 G N`, an abelian group homomorphism 
 from H⁰(G,M) to H⁰(G,N).
 
 As ever, this is a definition so we need to make a little API.
-Here is a handy fact:
+We start with the following handy fact:
 
 Given a G-module map `φ : M →+[G] N`, The following diagram commutes:
 
-        φ.H0
-H⁰(G,M) ---------> H⁰(G,N)
-  |                   |
+            φ
+  M ----------------> N
+  /\                  /\
   | coercion ↑        | coercion ↑
   |                   |
-  \/       φ          \/
-  M ----------------> N
+  |                   |
+H⁰(G,M) ---------> H⁰(G,N)
 -/
-@[simp] lemma H0_coe_apply (φ : M →+[G] N) (a : _root_.H0 G M) :
-(↑(φ.H0 a) : N) = φ ↑a := rfl
+@[simp] lemma coe_apply (m : H0 G M) (φ : M →+[G] N) :
+  ((φ.H0 m) : N) = φ m :=
+begin
+  -- Look at the goal the way I have written it.
+  -- Unfold the definitions. It's true by definition.
+  -- Look at the goal the way Lean is displaying it
+  -- right now. It's just coercions everywhere. Ignore them.
+  refl,
+end
+
+open distrib_mul_action_hom
 
 -- If you're in to that sort of thing, you can prove that `φ.H0`
--- is functorial.
-def H0_id : H0 (distrib_mul_action_hom.id G : M →+[G] M) =
-  add_monoid_hom.id _ :=
+-- is functorial. That's it and comp.
+def id_apply (m : H0 G M) :
+  (distrib_mul_action_hom.id G).H0 m = m :=
 begin
-  ext x,
+  -- remember extensionality. 
+  ext,
   refl,
 end
 
 variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 
-def H0_comp (φ : M →+[G] N) (ψ : N →+[G] P) :
-  H0 (ψ.comp φ) = ψ.H0.comp φ.H0 := 
+def comp (φ : M →+[G] N) (ψ : N →+[G] P) :
+  (ψ ∘ᵍ φ).H0 = ψ.H0.comp φ.H0 := 
 begin
-  ext x,
   refl,
 end
 
-end distrib_mul_action_hom
+end H0
 
 /-
 
@@ -320,7 +343,7 @@ begin
   ext x,
   rw add_monoid_hom.mem_ker,
   rw [H0.ext_iff, H0.coe_zero],
-  rw H0_coe_apply,
+  rw H0.coe_apply,
   rw is_exact.def at he,
   rw ← he,
   rw add_monoid_hom.mem_range,
@@ -339,6 +362,6 @@ begin
     use a,
     ext,
     -- next line not necessary as both proofs are `rfl`
-    rw [H0_coe_apply, ha],
+    rw [H0.coe_apply, ha],
     exact hmx },
 end
