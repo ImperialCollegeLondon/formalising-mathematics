@@ -66,7 +66,7 @@ variables {G M : Type}
 /-
 We have defined `H0 G M` to be a type, a so-called subtype of `M`,
 but a type in its own right. It has terms of its own (unlike `S : set M`
-or `A : add_subgroup M`)
+or `A : sub_distrib_mul_action M`)
 
 So how does this work? A term `m` of type `H0 G M` is a *package* consisting
 of a term `m.1 : M` and a proof `m.2 : ∀ g, g • m.1 = m.1`. We do not
@@ -126,10 +126,11 @@ add_subgroup.to_add_comm_group (H0_subgroup G M)
 -- Let's now prove an ext_iff lemma (useful for rewriting)
 lemma ext_iff (m₁ m₂ : H0 G M) : m₁ = m₂ ↔ (m₁ : M) = (m₂ : M) := 
 begin
-  -- if you care about extensionality here's a way to do it.
   split,
-  { rintro rfl, refl },
-  { ext }
+  { -- one way uses a rewrite
+    rintro rfl, refl },
+  { -- the other way is just set extensionality
+    ext }
 end
 
 -- Let's tell the simplifier how the group structure (addition, 0, negation
@@ -137,14 +138,17 @@ end
 -- are true by definition
 
 @[simp] lemma coe_add (a b : H0 G M) :
-  ((a + b : H0 G M) : M) = a + b := rfl
+  ((a + b : H0 G M) : M) = a + b :=
+begin
+  -- true by definition
+  refl
+end
 
-@[simp] lemma coe_zero : ((0 : H0 G M) : M) = 0 := rfl
+@[simp] lemma coe_zero : ((0 : H0 G M) : M) = 0 := rfl -- true by definition
 
 @[simp] lemma coe_neg (a : H0 G M) :
   ((-a : H0 G M) : M) = -a := rfl
 
--- we'll never use it but what the heck, others might
 @[simp] lemma coe_sub (a b : H0 G M) :
   ((a - b : H0 G M) : M) = a - b := rfl
 
@@ -165,15 +169,15 @@ end H0
 
 /-
 
-## API for the interaction of G-module maps and our new definition `H⁰`
+## Definition of `φ.H0 : H0 G M →+ H0 G N`
 
 Now let's prove that a G-module map `φ : M →+[G] N` induces a natural
 abelian group hom `φ.H0 : H⁰(G,M) →+ H⁰(G,N)`. I would rather do this in
 `φ`'s namespace, which is `distrib_mul_action_hom`, because then
-I can write `φ.H0` directly.
-
+I can write `φ.H0` directly. This is definitions so it's a bit messy.
+I left you one sorry -- prove that if `m ∈ H⁰(G,M)` then `φ(m)` is actually
+`G`-invariant.
 -/
-
 
 namespace distrib_mul_action_hom
 
@@ -185,7 +189,9 @@ variables {G M N : Type}
 -- Let's first define the group homomorphism `H0 G M →+ H0 G N` induced by `φ`.
 -- Recall that the constructor of `H0 G N` needs as input a pair consisting
 -- of `b : N` and `hb : ∀ g, g • b = b`, and we make the element of `H0 G N`
--- using the `⟨b, hb⟩` notation.
+-- using the `⟨b, hb⟩` notation. I am playing with the idea of
+-- distinguishing `n : H0 G N` and `b = ↑n` when we're taking these
+-- things apart explicitly. 
 
 /- The function underlying the group homomorphism `H⁰(G,M) → H⁰(G,N)`
    induced by a `G`-equivariant group homomorphism `φ : M →+[G] N` -/
@@ -213,45 +219,69 @@ begin
   simp,
 end
 
+end distrib_mul_action_hom
+
+-- The API for `φ.H0` starts here
+
+namespace H0
+
+variables {G M N : Type}
+  [monoid G] [add_comm_group M] [add_comm_group N]
+  [distrib_mul_action G M] [distrib_mul_action G N]
+  (a : M) (b : N)
+
 /-
+
+## An API for `φ.H0`
+
 So now if `φ : M →+[G] N` is a G-module homomorphism, we can talk
 about `φ.H0 : H0 G M →+ H0 G N`, an abelian group homomorphism 
 from H⁰(G,M) to H⁰(G,N).
 
 As ever, this is a definition so we need to make a little API.
-Here is a handy fact:
+We start with the following handy fact:
 
 Given a G-module map `φ : M →+[G] N`, The following diagram commutes:
 
-        φ.H0
-H⁰(G,M) ---------> H⁰(G,N)
-  |                   |
+            φ
+  M ----------------> N
+  /\                  /\
   | coercion ↑        | coercion ↑
   |                   |
-  \/       φ          \/
-  M ----------------> N
+  |                   |
+H⁰(G,M) ---------> H⁰(G,N)
 -/
-@[simp] lemma H0_coe_apply (φ : M →+[G] N) (a : _root_.H0 G M) :
-(↑(φ.H0 a) : N) = φ ↑a := rfl
+@[simp] lemma coe_apply (φ : M →+[G] N) (m : H0 G M) :
+  ((φ.H0 m) : N) = φ m :=
+begin
+  -- Look at the goal the way I have written it.
+  -- Unfold the definitions. It's true by definition.
+  -- Look at the goal the way Lean is displaying it
+  -- right now. It's just coercions everywhere. Ignore them.
+  sorry
+end
+
+open distrib_mul_action_hom
 
 -- If you're in to that sort of thing, you can prove that `φ.H0`
--- is functorial.
-def H0_id : H0 (distrib_mul_action_hom.id G : M →+[G] M) =
-  add_monoid_hom.id _ :=
+-- is functorial. That's it and comp.
+def id_apply (m : H0 G M) :
+  (distrib_mul_action_hom.id G).H0 m = m :=
 begin
+  -- remember extensionality. 
   sorry,
 end
 
 variables {P : Type} [add_comm_group P] [distrib_mul_action G P]
 
-def H0_comp (φ : M →+[G] N) (ψ : N →+[G] P) :
-  H0 (ψ.comp φ) = ψ.H0.comp φ.H0 := 
+def comp (φ : M →+[G] N) (ψ : N →+[G] P) :
+  (ψ ∘ φ : M →+[G] P).H0 = ψ.H0.comp φ.H0 := 
 begin
   -- be sure to check out the proof in the solutions.
   sorry
 end
 
-end distrib_mul_action_hom
+end H0
 
 /-
 
@@ -285,9 +315,12 @@ end
 
 
 -- H⁰(G,M) → H⁰(G,N) → H⁰(G,P) is exact, i.e. an image equals a kernel.
-theorem H0_hom.middle_exact (φ : M →+[G] N) (hφ : injective φ)
-  (ψ : N →+[G] P) (he : is_exact φ ψ) : 
+theorem H0_hom.middle_exact (φ : M →+[G] N)
+  (ψ : N →+[G] P) (h : is_short_exact φ ψ) : 
   φ.H0.range = ψ.H0.ker :=
 begin
   sorry,
 end
+
+-- Do you think we should prove something weaker? I quite
+-- like the API we have for short exact sequences.
