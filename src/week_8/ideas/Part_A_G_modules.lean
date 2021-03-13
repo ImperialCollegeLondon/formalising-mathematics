@@ -183,10 +183,6 @@ but not G-invariant subgroups, rather annoyingly. Hopefully
 -/
 section Jobo_homework
 
--- **TODO** copy post here
--- see KB post in live lean coding 11 Mar with API for
--- `sub_distrib_mul_action`
-
 set_option old_structure_cmd true
 
 structure sub_distrib_mul_action (G M : Type)
