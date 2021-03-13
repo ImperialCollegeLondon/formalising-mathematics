@@ -201,8 +201,16 @@ variables {N : Type} [add_comm_group N] [distrib_mul_action G N]
 
 instance : has_coe (sub_distrib_mul_action G M) (set M) := ⟨to_set⟩
 
-theorem ext_iff (A B : sub_distrib_mul_action G M) :
-  A = B ↔ ∀ m : M, m ∈ (A : set M) ↔ m ∈ (B : set M) := sorry
+lemma ext {A B : sub_distrib_mul_action G M}
+  (h : ∀ m : M, m ∈ (A : set M) ↔ m ∈ (B : set M)) :
+A = B :=
+begin
+  cases A; cases B; simp, ext m, exact h m
+end
+
+theorem ext_iff {A B : sub_distrib_mul_action G M} :
+  A = B ↔ ∀ m : M, m ∈ (A : set M) ↔ m ∈ (B : set M) :=
+⟨by {rintro rfl m, refl}, ext⟩ 
 
 end sub_distrib_mul_action
 
