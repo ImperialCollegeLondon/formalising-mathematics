@@ -335,16 +335,20 @@ with problems.
 -- THE WRONG DEFINITION
 structure sub_distrib_mul_action
   (G : Type) [monoid G]
-  (M : Type) [add_comm_group M] [distrib_mul_action G M].
+  (M : Type) [add_comm_group M] [distrib_mul_action G M] :=
+(carrier : set M)
 
 -- LEAVE THESE FOUR SORRYS ALONE
 def distrib_mul_action_hom.ker (φ : M →+[G] N) :
-  sub_distrib_mul_action G M := sorry 
+  sub_distrib_mul_action G M :=
+⟨{m | φ m = 0}⟩
 
 def distrib_mul_action_hom.range (φ : M →+[G] N) :
-  sub_distrib_mul_action G N := sorry
+  sub_distrib_mul_action G N :=
+⟨set.range φ⟩
 
-instance : has_coe (sub_distrib_mul_action G M) (set M) := sorry
+instance : has_coe (sub_distrib_mul_action G M) (set M) :=
+⟨sub_distrib_mul_action.carrier⟩
 
 theorem sub_distrib_mul_action.ext_iff {A B : sub_distrib_mul_action G M} :
   A = B ↔ ∀ m : M, m ∈ (A : set M) ↔ m ∈ (B : set M) := sorry

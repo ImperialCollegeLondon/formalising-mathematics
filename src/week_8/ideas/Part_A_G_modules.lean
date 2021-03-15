@@ -190,6 +190,23 @@ structure sub_distrib_mul_action (G M : Type)
   [distrib_mul_action G M]
 extends sub_mul_action G M, add_subgroup M
 
+/-
+
+Seems me to me that you either define `mem` or `coe`,
+depending on whether you want to build your own `mem`
+(unwise?) or rely on `coe`'s `mem`. 
+
+-- petition to abolish all `∈` other than `set.mem`
+
+-- mathematicians like reasoning with `∈`. By not defining
+-- `has_mem M` `sub_distrib_mul_action` we force set-theoretic
+-- arguments to happen within `set M`. 
+
+-- We define a coercion 
+-/
+-- **CLONE?**
+-- github search for formalizing mathematics does not give me
+-- this repo :-(
 namespace sub_distrib_mul_action
 variables {G : Type} [monoid G]
 variables {M : Type} [add_comm_group M] [distrib_mul_action G M]
@@ -222,12 +239,38 @@ by { refine_struct {carrier := {m : M | φ m = 0}},
   try {repeat {sorry}} -- proofs missing
 }
 
+variable (φ : M →+[G] N)
+
+lemma mem_ker_set (m : M) : m ∈ (φ.ker : set M) ↔ φ m = 0 :=
+begin
+  refl
+end
+
+-- let's not make this. Let's force coercion to set. No point
+-- in reduplicating the theory of `∈` on `set`. 
+-- kevin_thinks_this_is_a_bad_instance : has_mem M (sub_distrib_mul_action G M) := ⟨λ m S, m ∈ (S : set M)⟩
+
+/-
+Will this work in Lean 4?
+
+lemma mem_ker (m : M) : m ∈ φ.ker ↔ φ m = 0 :=
+begin
+  refl
+end
+-/
+lemma mem_ker (m : M) : m ∈ (φ.ker : set M) ↔ φ m = 0 :=
+begin
+  refl
+end
+
 def range (φ : M →+[G] N) :
   sub_distrib_mul_action G N :=
 by { refine_struct {carrier := set.range φ},
   try {repeat {sorry}} -- proofs missing
 }
- 
+
+lemma coe_range (n : N) : n ∈ (set.range (⇑φ)) ↔ n ∈ (φ.range : set N) := iff.rfl 
+lemma mem_range (n : N) : n ∈ (set.range (⇑φ)) ↔ ∃ m : M, φ m = n := iff.rfl 
 -- now copy theorems from sub_mul_action if you want
 
 --now port subgroup and sub_mul_action
@@ -408,25 +451,15 @@ variables {G M N P : Type}
 definition is_exact (φ : M →+[G] N) (ψ : N →+[G] P) : Prop :=
 φ.range = ψ.ker
 
-@[simp] lemma is_exact.def' (φ : M →+[G] N) (ψ : N →+[G] P) :
-  is_exact φ ψ ↔ φ.range = ψ.ker := iff.rfl
+variables (φ : M →+[G] N) (ψ : N →+[G] P) 
 
-@[simp] lemma is_exact.def (φ : M →+[G] N) (ψ : N →+[G] P) :
+@[simp] lemma is_exact.def' : is_exact φ ψ ↔ φ.range = ψ.ker := iff.rfl
+
+@[simp] lemma is_exact.def :
   is_exact φ ψ ↔ ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
 begin
   rw is_exact.def',
   rw sub_distrib_mul_action.ext_iff, 
-  refl,
-end
-
--- Switch your infoview filter onto "only props" to get the noise
--- out of the way.
-
--- this is the wrong way around, it should be removed.
-lemma is_exact_def' (φ : M →+[G] N) (ψ : N →+[G] P) :
-  is_exact φ ψ ↔ ψ.ker = φ.range :=
-begin
-  rw eq_comm,
   refl,
 end
 
@@ -474,8 +507,6 @@ def is_short_exact (φ : M →+[G] N) (ψ : N →+[G] P) : Prop :=
   is_exact φ ψ ∧ injective φ ∧ surjective ψ
 
 -- We need to make a nice API for this, it's easy and fun.
-
-variables (φ : M →+[G] N) (ψ : N →+[G] P)
 
 -- useful for rewrites when we're making the API, but the user
 -- should never see this.
@@ -529,18 +560,27 @@ protected def exact : is_exact φ ψ := h.1
 --@[simp] lemma is_exact_def (φ : M →+[G] N) (ψ : N →+[G] P) :
 --  is_exact φ ψ ↔ ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
 
-def exact_set : ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
+theorem exact_set : ∀ n : N, (∃ m : M, φ m = n) ↔ ψ n = 0 :=
 begin
   rw ← is_exact.def,
   exact h.exact
 end
 
-def exact_cat : φ.range = ψ.ker :=
+theorem exact_cat : φ.range = ψ.ker :=
 begin
   rw ← is_exact.def',
   -- different uses of word!
   exact h.exact,
 end
+
+@[simp] theorem comp_apply (m : M) : ψ (φ m) = 0 :=
+begin
+  rw ← ψ.mem_ker,
+  rw ← h.exact_cat,
+  rw ← φ.coe_range,
+  simp,
+end
+
 
 -- now a noncomputable function defined by the axiom of choice,
 -- a random splitting of the surjection ψ : P → N and hence a one-sided

@@ -69,7 +69,7 @@ end
 noncomputable def delta : H0 G P →+ H1 G M :=
 { to_fun := λ p, Z1.quotient
   { to_fun := raw_boundary_function hse p,
-    is_cocycle := raw_boundary_function.is_cocycle hse },
+    is_cocycle' := raw_boundary_function.is_cocycle hse },
   map_zero' := begin
     rw ← add_monoid_hom.mem_ker,
     rw H1.ker_quotient,
