@@ -312,7 +312,7 @@ begin
   sorry
 end
 
-lemma unique_right_inv {a b : G} (h : a * b = 1) : b = a⁻¹ :=
+lemma unique_right_id {e : G} (h : ∀ x : G, x * e = x) : e = 1 :=
 begin
   sorry
 end

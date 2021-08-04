@@ -338,10 +338,10 @@ lemma unique_left_id {e : G} (h : ∀ x : G, e * x = x) : e = 1 :=
 calc e = e * 1 : by rw mul_one
   ...  = 1 : by rw h 1
 
-lemma unique_right_inv {a b : G} (h : a * b = 1) : b = a⁻¹ :=
+lemma unique_right_id {e : G} (h : ∀ x : G, x * e = x) : e = 1 :=
 begin
-  apply mul_left_cancel a,
-  simp [h],
+  have := inv_eq_of_mul_eq_one (h 1),
+  simp [← this],
 end
 
 lemma mul_left_cancel_iff (a x y : G) : a * x = a * y ↔ x = y :=
