@@ -170,7 +170,7 @@ If you tell it that `A = B` is a `simp` lemma then it will replace `A`s with
 `B`s, but it will never replace `B`s with `A`s. If you tag a proof
 of `A = B` with `@[simp]` and you also tag a proof of `B = A` with
 `@[simp]`, then the simplifier will get stuck in an infinite loop when
-it runs into an `A`! Equality should not be thought of as symmetric here.
+it runs into an `A`!
 
 Because the simplifier works from left to right, an important
 rule of thumb is that if `A = B` is a `simp` lemma, then `B` should
@@ -185,9 +185,10 @@ the right hand side is simpler than the left hand side. It would be a
 > disaster to tag `a = a * 1` with the `@[simp]` tag -- can you see why?
 
 
-Let's train Lean's simplifier! Let's teach it the axioms of a `group` next.
-We have already done the axioms, so we have to retrospectively tag
-them with the `@[simp]` attribute.
+Let's train Lean's simplifier! Let's teach it the axioms of a `group`
+next. We have already defined them as part of defining our `group`
+structure, so we have to retrospectively tag them with the `@[simp]`
+attribute using a slightly different syntax.
 -/
 
 attribute [simp] one_mul mul_left_inv mul_assoc
