@@ -28,7 +28,7 @@ You should also get Lean 3 and the community tools installed on your computer. T
 
 # How to play?
 
-Assuming you have Lean and the user tools installed, first install the repository by firing up a command line, navigating (using `pwd` and `cd`) to the directory you want to install this project in, and then typing
+Assuming you have Lean and the user tools installed, first install the repository by firing up a command line, navigating to the directory you want to install this project in, and then typing
 
 ```
 leanproject get ImperialCollegeLondon/formalising-mathematics
@@ -37,6 +37,8 @@ code formalising-mathematics
 ```
 
 and then open up some of the files in `src/week1` and you're up and running. Look at the `README.md` file in `src/week1` for more instructions. Fill in the `sorry`s. Try a couple of levels of the [natural number game](http://wwwf.imperial.ac.uk/~buzzard/xena/natural_number_game/) if you're not sure what's going on.
+
+Important note: if you just use `git clone` or some "download zip file" option on github then it won't work; you will not have access to Lean's maths library if you try this way (so imports won't work etc). 
 
 # I failed/couldn't be bothered to install Lean
 
