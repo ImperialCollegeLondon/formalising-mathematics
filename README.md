@@ -8,7 +8,7 @@ In this course, we're going to be turning maths theorems into levels of a comput
 
 ## What mathematics is covered?
 
-I took the slightly unconventional approach of blogging about each workshop rather than writing a formal document. Here are links to the eight workshop blog posts:
+I took the slightly unconventional approach of blogging about each workshop rather than writing a formal document. Here are links to the eight workshop blog posts (plus an introductory post which explains my motivations for teaching the course):
 
 0) [Introduction](https://xenaproject.wordpress.com/2021/01/21/formalising-mathematics-an-introduction/)
 1) [Logic, sets, functions, relations](https://xenaproject.wordpress.com/2021/01/24/formalising-mathematics-workshop-1/)
