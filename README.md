@@ -1,3 +1,7 @@
+# IMPORTANT
+
+This is Lean 3 code; Lean 3 is now end-of-life. A Lean 4 version of this course is available [here](https://github.com/ImperialCollegeLondon/formalising-mathematics-2024)
+
 # Formalising Mathematics
 
 Repository for the Jan-Mar 2021 EPSRC TCC course on formalising mathematics, delivered to mathematicians at Imperial, Oxford, Bristol, Bath and Warwick.
