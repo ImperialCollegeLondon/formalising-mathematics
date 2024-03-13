@@ -6,7 +6,7 @@ import tactic
 
 We will develop the basic theory of following five basic logical symbols
 
-* `→` ("implies" -- type with `\l`)
+* `→` ("implies" -- type with `\r`)
 * `¬` ("not" -- type with `\not` or `\n`)
 * `∧` ("and" -- type with `\and` or `\an`)
 * `↔` ("iff" -- type with `\iff` or `\lr`)
